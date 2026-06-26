@@ -11,6 +11,8 @@ import io
 import requests
 from pathlib import Path
 import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
 
 # ============================================================
 # PAGE CONFIG
@@ -23,7 +25,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# CSS
+# CSS + ANIMATIONS
 # ============================================================
 st.markdown("""
 <style>
@@ -31,114 +33,40 @@ st.markdown("""
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 #MainMenu, footer, header { visibility: hidden; }
-
-.stApp {
-    background: #080c14;
-    background-image:
-        radial-gradient(ellipse at 20% 10%, rgba(59,130,246,0.07) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 90%, rgba(139,92,246,0.05) 0%, transparent 50%);
-}
-
-/* Hide default sidebar toggle */
 [data-testid="collapsedControl"] { display: none; }
 [data-testid="stSidebar"] { display: none; }
 
+/* ---- APP BACKGROUND ---- */
+.stApp {
+    background: #080c14;
+    background-image:
+        radial-gradient(ellipse at 20% 10%, rgba(59,130,246,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 90%, rgba(139,92,246,0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(6,182,212,0.03) 0%, transparent 60%);
+}
+
 /* ---- TOP NAV ---- */
 .topnav {
-    position: sticky;
-    top: 0;
-    z-index: 999;
-    background: rgba(8,12,20,0.92);
-    backdrop-filter: blur(16px);
+    background: rgba(8,12,20,0.95);
+    backdrop-filter: blur(20px);
     border-bottom: 1px solid #1e2d3d;
-    padding: 0 32px;
+    padding: 0 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 58px;
+    height: 56px;
     margin: -1rem -1rem 2rem -1rem;
+    position: sticky;
+    top: 0;
+    z-index: 999;
 }
-
-.topnav-brand {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #3b82f6, #818cf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    white-space: nowrap;
-}
-
-.topnav-links {
-    display: flex;
-    gap: 4px;
-}
-
-.navlink {
-    padding: 7px 16px;
-    border-radius: 8px;
-    font-size: 0.83rem;
-    font-weight: 500;
-    color: #8b949e;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.navlink:hover { color: #f0f6fc; background: rgba(255,255,255,0.06); }
-.navlink.active { color: #3b82f6; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.2); }
-
-/* ---- TYPOGRAPHY ---- */
-.display-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 3.6rem;
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #818cf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.display-sub {
-    font-size: 1.05rem;
-    color: #8b949e;
-    line-height: 1.7;
-    max-width: 580px;
-    margin: 0 auto;
-}
-
-.eyebrow {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    font-weight: 500;
-    color: #3b82f6;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 8px;
-}
-
-.sec-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.7rem;
-    font-weight: 700;
-    color: #f0f6fc;
-    letter-spacing: -0.02em;
-    margin-bottom: 6px;
-}
-
-.sec-body { color: #8b949e; font-size: 0.9rem; line-height: 1.7; }
 
 /* ---- HERO ---- */
 .hero {
     background: linear-gradient(180deg, #0d1117 0%, #080c14 100%);
     border: 1px solid #1e2d3d;
     border-radius: 20px;
-    padding: 56px 48px;
+    padding: 64px 48px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -150,20 +78,55 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     position: absolute;
     top: 0; left: 50%;
     transform: translateX(-50%);
-    width: 500px; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent);
+    width: 600px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(59,130,246,0.7), transparent);
 }
 
 .hero::after {
     content: '';
     position: absolute;
-    top: -150px; left: 50%;
+    top: -180px; left: 50%;
     transform: translateX(-50%);
-    width: 350px; height: 350px;
-    background: radial-gradient(circle, rgba(59,130,246,0.09) 0%, transparent 70%);
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%);
     pointer-events: none;
+    animation: pulse-glow 4s ease-in-out infinite;
 }
 
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+}
+
+/* ---- TYPING ANIMATION ---- */
+.typing-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3.8rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #ffffff 0%, #93c5fd 40%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+    overflow: hidden;
+    border-right: 3px solid #3b82f6;
+    white-space: nowrap;
+    animation: typing 2s steps(20, end) forwards, blink 0.8s step-end infinite;
+    max-width: 100%;
+}
+
+@keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+@keyframes blink {
+    50% { border-color: transparent; }
+}
+
+/* ---- BADGE ---- */
 .badge {
     display: inline-flex;
     align-items: center;
@@ -179,41 +142,88 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     text-transform: uppercase;
     margin-bottom: 20px;
     font-family: 'JetBrains Mono', monospace;
+    animation: fadeIn 0.5s ease both;
 }
 
-/* ---- STATS ROW ---- */
+.badge .dot {
+    width: 6px; height: 6px;
+    background: #3b82f6;
+    border-radius: 50%;
+    animation: ping 1.5s ease-in-out infinite;
+}
+
+@keyframes ping {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+/* ---- STAT BOXES with counter animation ---- */
 .stats-row {
     display: flex;
     justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
-    margin-top: 28px;
+    margin-top: 32px;
 }
 
 .stat-box {
     background: rgba(255,255,255,0.04);
     border: 1px solid #1e2d3d;
-    border-radius: 12px;
-    padding: 12px 22px;
+    border-radius: 14px;
+    padding: 16px 24px;
     text-align: center;
-    min-width: 100px;
+    min-width: 110px;
+    transition: border-color 0.3s, transform 0.3s, background 0.3s;
+    animation: slideUp 0.6s ease both;
+}
+
+.stat-box:hover {
+    border-color: rgba(59,130,246,0.5);
+    transform: translateY(-4px);
+    background: rgba(59,130,246,0.08);
 }
 
 .stat-v {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.6rem;
+    font-weight: 800;
     color: #3b82f6;
     line-height: 1;
 }
 
 .stat-l {
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     color: #6e7681;
-    margin-top: 4px;
+    margin-top: 5px;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
+    font-weight: 500;
 }
+
+/* ---- ANIMATIONS ---- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.anim-fade { animation: fadeIn 0.5s ease both; }
+.anim-slide { animation: slideUp 0.5s ease both; }
+.anim-scale { animation: scaleIn 0.4s ease both; }
 
 /* ---- CARDS ---- */
 .gcard {
@@ -222,10 +232,14 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border-radius: 14px;
     padding: 24px;
     margin-bottom: 14px;
-    transition: border-color 0.2s;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
 }
 
-.gcard:hover { border-color: #2d4a6e; }
+.gcard:hover {
+    border-color: #2d4a6e;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
 
 .clabel {
     font-family: 'JetBrains Mono', monospace;
@@ -236,66 +250,143 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     margin-bottom: 14px;
 }
 
+/* ---- EYEBROW ---- */
+.eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: #3b82f6;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+}
+
+/* ---- SECTION TITLE ---- */
+.sec-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #f0f6fc;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.sec-body { color: #8b949e; font-size: 0.9rem; line-height: 1.7; }
+
 /* ---- KPI ---- */
 .kpi {
     background: #0d1117;
     border: 1px solid #1e2d3d;
     border-radius: 12px;
-    padding: 18px;
+    padding: 16px;
     text-align: center;
-    transition: border-color 0.2s, transform 0.15s;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
-.kpi:hover { border-color: rgba(59,130,246,0.35); transform: translateY(-2px); }
+.kpi:hover {
+    border-color: rgba(59,130,246,0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 24px rgba(59,130,246,0.1);
+}
 .kpi-v { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 700; color: #3b82f6; line-height: 1; }
 .kpi-l { font-size: 0.68rem; color: #6e7681; margin-top: 6px; letter-spacing: 0.04em; }
 
 /* ---- RESULT CARDS ---- */
 .res-pass {
-    background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.04));
+    background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04));
     border: 2px solid rgba(16,185,129,0.5);
     border-radius: 16px;
     padding: 32px 24px;
     text-align: center;
-    box-shadow: 0 0 30px rgba(16,185,129,0.08);
+    animation: scaleIn 0.4s ease both;
+    box-shadow: 0 0 40px rgba(16,185,129,0.1), inset 0 1px 0 rgba(16,185,129,0.2);
 }
 
 .res-fail {
-    background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.04));
+    background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04));
     border: 2px solid rgba(239,68,68,0.5);
     border-radius: 16px;
     padding: 32px 24px;
     text-align: center;
-    box-shadow: 0 0 30px rgba(239,68,68,0.08);
+    animation: scaleIn 0.4s ease both;
+    box-shadow: 0 0 40px rgba(239,68,68,0.1), inset 0 1px 0 rgba(239,68,68,0.2);
 }
 
-.res-icon { font-size: 3.5rem; line-height: 1; margin-bottom: 10px; }
-
-.res-verdict {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    margin: 0;
-}
-
-.res-conf {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-top: 8px;
-}
-
+.res-icon { font-size: 3.5rem; line-height: 1; margin-bottom: 12px; }
+.res-verdict { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+.res-conf { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; margin-top: 8px; }
 .res-sub { font-size: 0.82rem; color: #8b949e; margin-top: 4px; }
 
-/* ---- CONFIDENCE BAR ---- */
-.conf-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
+/* ---- COMPARISON SLIDER ---- */
+.slider-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    cursor: ew-resize;
+    user-select: none;
 }
-.conf-label { font-size: 0.83rem; font-weight: 600; }
-.conf-val { font-size: 0.83rem; color: #f0f6fc; font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+
+.slider-before, .slider-after {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+}
+
+.slider-divider {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: white;
+    cursor: ew-resize;
+    z-index: 10;
+}
+
+.slider-handle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    font-size: 1rem;
+    cursor: ew-resize;
+}
+
+/* ---- SAMPLE IMAGE HOVER ---- */
+.sample-card {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #1e2d3d;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    cursor: pointer;
+}
+
+.sample-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+
+.sample-card.normal { border-color: rgba(16,185,129,0.4); }
+.sample-card.anomaly { border-color: rgba(239,68,68,0.3); }
+
+.sample-card.normal:hover { border-color: #10b981; box-shadow: 0 12px 40px rgba(16,185,129,0.15); }
+.sample-card.anomaly:hover { border-color: #ef4444; box-shadow: 0 12px 40px rgba(239,68,68,0.15); }
+
+.sample-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    padding: 20px 10px 8px;
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+}
+
+.sample-card:hover .sample-overlay { transform: translateY(0); }
 
 /* ---- BUTTONS ---- */
 div[data-testid="stButton"] button {
@@ -307,30 +398,23 @@ div[data-testid="stButton"] button {
     font-family: 'Space Grotesk', sans-serif !important;
     font-size: 0.9rem !important;
     padding: 10px 20px !important;
-    transition: opacity 0.2s, transform 0.15s !important;
+    transition: all 0.2s !important;
     width: 100% !important;
-    letter-spacing: 0.01em !important;
+    letter-spacing: 0.02em !important;
+    box-shadow: 0 4px 15px rgba(59,130,246,0.3) !important;
 }
 
 div[data-testid="stButton"] button:hover {
-    opacity: 0.88 !important;
-    transform: translateY(-1px) !important;
+    opacity: 0.9 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(59,130,246,0.4) !important;
 }
 
 div[data-testid="stButton"] button:disabled {
     background: #1e2d3d !important;
     color: #484f58 !important;
-    opacity: 1 !important;
+    box-shadow: none !important;
     transform: none !important;
-}
-
-/* Sample use buttons - smaller */
-div[data-testid="stButton"]:has(button[kind="secondary"]) button {
-    background: rgba(59,130,246,0.15) !important;
-    border: 1px solid rgba(59,130,246,0.3) !important;
-    color: #60a5fa !important;
-    font-size: 0.78rem !important;
-    padding: 7px 14px !important;
 }
 
 /* ---- INFO BOX ---- */
@@ -342,72 +426,6 @@ div[data-testid="stButton"]:has(button[kind="secondary"]) button {
     font-size: 0.82rem;
     color: #8b949e;
     line-height: 1.6;
-}
-
-/* ---- SAMPLE IMAGE CARD ---- */
-.sample-wrap {
-    border-radius: 10px;
-    overflow: hidden;
-    border: 2px solid #1e2d3d;
-    transition: border-color 0.2s, transform 0.2s;
-    cursor: pointer;
-}
-.sample-wrap:hover { border-color: #3b82f6; transform: translateY(-2px); }
-.sample-wrap.normal { border-color: rgba(16,185,129,0.4); }
-.sample-wrap.anomaly { border-color: rgba(239,68,68,0.3); }
-
-.sample-tag {
-    padding: 5px 0;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-/* ---- SELECTED IMAGE PREVIEW ---- */
-.selected-preview {
-    background: #0d1117;
-    border: 2px solid rgba(59,130,246,0.4);
-    border-radius: 12px;
-    padding: 10px;
-    text-align: center;
-}
-
-/* ---- MODEL CARDS ---- */
-.mcard {
-    background: #0d1117;
-    border: 1px solid #1e2d3d;
-    border-radius: 14px;
-    padding: 24px;
-    height: 100%;
-    transition: transform 0.2s, border-color 0.2s;
-}
-.mcard:hover { transform: translateY(-3px); }
-.mcard.best { border-color: rgba(16,185,129,0.4); }
-.mcard.mid  { border-color: rgba(59,130,246,0.3); }
-
-/* ---- PIPELINE ---- */
-.pstep {
-    background: #0d1117;
-    border: 1px solid #1e2d3d;
-    border-radius: 12px;
-    padding: 16px 12px;
-    text-align: center;
-    transition: border-color 0.2s, transform 0.2s;
-}
-.pstep:hover { border-color: rgba(59,130,246,0.35); transform: translateY(-2px); }
-
-/* ---- FOOTER ---- */
-.foot {
-    background: #0d1117;
-    border: 1px solid #1e2d3d;
-    border-radius: 16px;
-    padding: 28px 36px;
-    margin-top: 48px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
 }
 
 /* ---- TECH BADGE ---- */
@@ -423,7 +441,7 @@ div[data-testid="stButton"]:has(button[kind="secondary"]) button {
     margin: 3px;
     transition: all 0.2s;
 }
-.tbadge:hover { border-color: #3b82f6; color: #60a5fa; }
+.tbadge:hover { border-color: #3b82f6; color: #60a5fa; background: rgba(59,130,246,0.08); }
 
 /* ---- CAT PILL ---- */
 .cpill {
@@ -435,7 +453,50 @@ div[data-testid="stButton"]:has(button[kind="secondary"]) button {
     border-radius: 100px;
     font-size: 0.75rem;
     margin: 3px;
+    transition: all 0.2s;
 }
+.cpill:hover { background: rgba(139,92,246,0.18); border-color: rgba(139,92,246,0.4); }
+
+/* ---- MODEL CARDS ---- */
+.mcard {
+    background: #0d1117;
+    border: 1px solid #1e2d3d;
+    border-radius: 14px;
+    padding: 24px;
+    height: 100%;
+    transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+.mcard:hover { transform: translateY(-4px); box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+.mcard.best { border-color: rgba(16,185,129,0.4); }
+.mcard.mid  { border-color: rgba(59,130,246,0.3); }
+
+/* ---- PIPELINE STEP ---- */
+.pstep {
+    background: #0d1117;
+    border: 1px solid #1e2d3d;
+    border-radius: 12px;
+    padding: 16px 10px;
+    text-align: center;
+    transition: all 0.25s;
+}
+.pstep:hover { border-color: rgba(59,130,246,0.4); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(59,130,246,0.1); }
+
+/* ---- FOOTER ---- */
+.foot {
+    background: #0d1117;
+    border: 1px solid #1e2d3d;
+    border-radius: 16px;
+    padding: 28px 36px;
+    margin-top: 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* ---- DIVIDER ---- */
+.divider { border: none; border-top: 1px solid #1e2d3d; margin: 32px 0; }
 
 /* ---- STREAMLIT OVERRIDES ---- */
 h1,h2,h3,h4,h5,h6 { color: #f0f6fc !important; }
@@ -445,17 +506,15 @@ p, li { color: #8b949e; }
     background: #0d1117 !important;
     border: 2px dashed #1e2d3d !important;
     border-radius: 12px !important;
+    transition: border-color 0.2s !important;
 }
-.stSelectbox > div > div {
-    background: #0d1117 !important;
-    border: 1px solid #1e2d3d !important;
-    color: #f0f6fc !important;
-}
-.stDataFrame { border: 1px solid #1e2d3d; border-radius: 12px; }
-.stSuccess { background: rgba(16,185,129,0.1) !important; border: 1px solid rgba(16,185,129,0.3) !important; border-radius: 10px !important; }
+[data-testid="stFileUploader"]:hover { border-color: rgba(59,130,246,0.4) !important; }
+.stSelectbox > div > div { background: #0d1117 !important; border: 1px solid #1e2d3d !important; color: #f0f6fc !important; }
+.stDataFrame { border: 1px solid #1e2d3d; border-radius: 12px; overflow: hidden; }
+.stSuccess { background: rgba(16,185,129,0.1) !important; border: 1px solid rgba(16,185,129,0.3) !important; border-radius: 10px !important; color: #10b981 !important; }
+.stAlert { border-radius: 10px !important; }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ============================================================
 # CONSTANTS
@@ -494,7 +553,6 @@ SAMPLE_FILES = {
 
 PAGES = ["🏠 Live Demo", "📋 Project Info", "📊 Results", "🔬 Explainability", "👤 About"]
 
-
 # ============================================================
 # SESSION STATE
 # ============================================================
@@ -504,31 +562,40 @@ if "selected_sample_img" not in st.session_state:
     st.session_state.selected_sample_img = None
 if "selected_sample_name" not in st.session_state:
     st.session_state.selected_sample_name = None
-
+if "analysis_done" not in st.session_state:
+    st.session_state.analysis_done = False
+if "analysis_results" not in st.session_state:
+    st.session_state.analysis_results = None
 
 # ============================================================
 # TOP NAV
 # ============================================================
-nav_cols = st.columns([1.2, 5, 0.5])
+nav_cols = st.columns([1.5, 5, 0.3])
 with nav_cols[0]:
-    st.markdown("<div class='topnav-brand' style='padding:16px 0;'>🔍 AnomalyVision</div>",
-                unsafe_allow_html=True)
+    st.markdown("""
+    <div style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:800;
+                background:linear-gradient(135deg,#3b82f6,#818cf8);
+                -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+                background-clip:text; padding:14px 0; white-space:nowrap;">
+        🔍 AnomalyVision
+    </div>
+    """, unsafe_allow_html=True)
 
 with nav_cols[1]:
     btn_cols = st.columns(len(PAGES))
     for i, (col, pg) in enumerate(zip(btn_cols, PAGES)):
         with col:
-            active = "active" if st.session_state.page == pg else ""
-            if st.button(pg.split(" ", 1)[1], key=f"nav_{i}",
-                         use_container_width=True):
+            is_active = st.session_state.page == pg
+            label = pg.split(" ", 1)[1]
+            if st.button(label, key=f"nav_{i}", use_container_width=True):
                 st.session_state.page = pg
                 st.session_state.selected_sample_img = None
+                st.session_state.selected_sample_name = None
+                st.session_state.analysis_done = False
                 st.rerun()
 
 st.markdown("<hr style='border-color:#1e2d3d; margin:0 0 24px;'>", unsafe_allow_html=True)
-
 page = st.session_state.page
-
 
 # ============================================================
 # MODEL
@@ -591,25 +658,13 @@ class GradCAM:
         return cv2.resize(cam, (IMG_SIZE,IMG_SIZE))
 
 
-def gradcam_figure(pil_img, heatmap):
+def make_gradcam_images(pil_img, heatmap):
+    """Returns original numpy array and overlay numpy array."""
     img = np.array(pil_img.resize((IMG_SIZE,IMG_SIZE))).astype(np.float32)/255
     h   = cv2.applyColorMap(np.uint8(255*heatmap), cv2.COLORMAP_JET)
     h   = cv2.cvtColor(h, cv2.COLOR_BGR2RGB).astype(np.float32)/255
     ov  = np.clip(0.45*h + 0.55*img, 0, 1)
-    fig, axes = plt.subplots(1,2,figsize=(11,4.5))
-    fig.patch.set_facecolor('#0d1117')
-    for a in axes: a.set_facecolor('#0d1117')
-    axes[0].imshow(img)
-    axes[0].set_title('Original Image', color='#c9d1d9', fontsize=12, pad=12, fontweight='600')
-    axes[0].axis('off')
-    axes[1].imshow(ov)
-    axes[1].set_title('Grad-CAM Heatmap — Model Focus Areas', color='#c9d1d9', fontsize=12, pad=12, fontweight='600')
-    axes[1].axis('off')
-    plt.tight_layout(pad=2.5)
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='#0d1117')
-    buf.seek(0); plt.close()
-    return buf
+    return img, ov
 
 
 def run_prediction(model, pil_img):
@@ -624,8 +679,8 @@ def run_prediction(model, pil_img):
     layer  = list(model.backbone.features.children())[-1]
     gc     = GradCAM(model, layer)
     hm     = gc.generate(tensor.clone().requires_grad_(True), cls=pred)
-    fig    = gradcam_figure(pil_img, hm)
-    return pred, conf, p_norm, p_anom, fig
+    orig_np, overlay_np = make_gradcam_images(pil_img, hm)
+    return pred, conf, p_norm, p_anom, orig_np, overlay_np
 
 
 @st.cache_data(show_spinner=False)
@@ -634,6 +689,41 @@ def fetch_sample(cat, fname):
     if r.status_code == 200:
         return Image.open(io.BytesIO(r.content)).convert("RGB")
     return None
+
+
+def make_gauge(value, label, color):
+    """Create a circular gauge chart using Plotly."""
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=value * 100,
+        number={'suffix': '%', 'font': {'size': 28, 'color': color,
+                'family': 'Space Grotesk'}},
+        gauge={
+            'axis': {'range': [0, 100], 'tickwidth': 0,
+                     'tickcolor': '#1e2d3d', 'tickfont': {'color': '#6e7681', 'size': 9}},
+            'bar': {'color': color, 'thickness': 0.25},
+            'bgcolor': '#0d1117',
+            'borderwidth': 0,
+            'steps': [
+                {'range': [0, 100], 'color': '#1e2d3d'},
+            ],
+            'threshold': {
+                'line': {'color': color, 'width': 3},
+                'thickness': 0.75,
+                'value': value * 100
+            }
+        },
+        title={'text': label, 'font': {'size': 11, 'color': '#8b949e',
+               'family': 'JetBrains Mono'}}
+    ))
+    fig.update_layout(
+        paper_bgcolor='#0d1117',
+        plot_bgcolor='#0d1117',
+        font={'color': '#f0f6fc'},
+        height=180,
+        margin=dict(t=40, b=10, l=20, r=20),
+    )
+    return fig
 
 
 def footer():
@@ -667,20 +757,34 @@ def footer():
 # ============================================================
 if page == "🏠 Live Demo":
 
+    # Hero with typing animation
     st.markdown("""
     <div class="hero">
-        <div class="badge">● LIVE INFERENCE ENGINE ACTIVE</div>
-        <div class="display-title">Detect Defects<br>in Milliseconds</div>
-        <p class="display-sub" style="margin-top:14px;">
+        <div class="badge"><span class="dot"></span> LIVE INFERENCE ENGINE ACTIVE</div>
+        <div style="overflow:hidden; display:inline-block;">
+            <div class="typing-title">Detect Defects in Milliseconds</div>
+        </div>
+        <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:16px;
+                  max-width:580px; margin-left:auto; margin-right:auto;">
             Upload any industrial product image and get an instant AI-powered
-            quality assessment with visual explanations.
+            quality assessment with visual Grad-CAM explanations.
         </p>
         <div class="stats-row">
-            <div class="stat-box"><div class="stat-v">90.66%</div><div class="stat-l">Accuracy</div></div>
-            <div class="stat-box"><div class="stat-v">0.9544</div><div class="stat-l">ROC-AUC</div></div>
-            <div class="stat-box"><div class="stat-v">4.4ms</div><div class="stat-l">Inference</div></div>
-            <div class="stat-box"><div class="stat-v">15</div><div class="stat-l">Categories</div></div>
-            <div class="stat-box"><div class="stat-v">5K+</div><div class="stat-l">Images Trained</div></div>
+            <div class="stat-box" style="animation-delay:0.1s">
+                <div class="stat-v">90.66%</div><div class="stat-l">Accuracy</div>
+            </div>
+            <div class="stat-box" style="animation-delay:0.2s">
+                <div class="stat-v">0.9544</div><div class="stat-l">ROC-AUC</div>
+            </div>
+            <div class="stat-box" style="animation-delay:0.3s">
+                <div class="stat-v">4.4ms</div><div class="stat-l">Inference</div>
+            </div>
+            <div class="stat-box" style="animation-delay:0.4s">
+                <div class="stat-v">15</div><div class="stat-l">Categories</div>
+            </div>
+            <div class="stat-box" style="animation-delay:0.5s">
+                <div class="stat-v">5K+</div><div class="stat-l">Images Trained</div>
+            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -690,7 +794,7 @@ if page == "🏠 Live Demo":
         st.error("Model could not be loaded. Please refresh the page.")
         st.stop()
 
-    # ---- Upload section ----
+    # ---- Upload + Preview ----
     up_col, prev_col = st.columns([1,1], gap="large")
 
     with up_col:
@@ -701,36 +805,35 @@ if page == "🏠 Live Demo":
             label_visibility="collapsed"
         )
         if uploaded_file:
-            # Clear any selected sample when user uploads
-            st.session_state.selected_sample_img = None
+            st.session_state.selected_sample_img  = None
             st.session_state.selected_sample_name = None
+            st.session_state.analysis_done = False
 
         st.markdown("""
         <div class="infobox" style="margin-top:12px;">
             <strong style="color:#3b82f6;">Works with any industrial product.</strong>
-            Covers bottles, cables, capsules, carpet, grid, hazelnut, leather,
-            metal nuts, pills, screws, tiles, toothbrushes, transistors, wood, and zippers.
+            Covers all 15 MVTec AD categories: bottles, cables, capsules, carpet,
+            grid, hazelnut, leather, metal nuts, pills, screws, tiles,
+            toothbrushes, transistors, wood, and zippers.
         </div>
         """, unsafe_allow_html=True)
 
     with prev_col:
         st.markdown("<div class='clabel'>IMAGE PREVIEW</div>", unsafe_allow_html=True)
-        # Show uploaded file or selected sample
         if uploaded_file:
-            display_img = Image.open(uploaded_file)
-            st.image(display_img, use_column_width=True)
+            st.image(Image.open(uploaded_file), use_column_width=True)
         elif st.session_state.selected_sample_img is not None:
             st.image(st.session_state.selected_sample_img, use_column_width=True)
             st.markdown(f"""
-            <div style="text-align:center; font-size:0.78rem; color:#60a5fa; margin-top:6px;">
-                ✓ {st.session_state.selected_sample_name}
+            <div style="text-align:center; color:#60a5fa; font-size:0.78rem; margin-top:6px;
+                        font-family:'JetBrains Mono',monospace;">
+                ✓ Loaded: {st.session_state.selected_sample_name}
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
             <div style="background:#0d1117; border:2px dashed #1e2d3d; border-radius:12px;
-                        padding:60px 20px; text-align:center; color:#484f58; min-height:200px;
-                        display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        padding:70px 20px; text-align:center; color:#484f58; min-height:220px;">
                 <div style="font-size:2.5rem;">🖼️</div>
                 <div style="font-size:0.82rem; margin-top:10px;">
                     Upload an image or select a sample below
@@ -738,9 +841,10 @@ if page == "🏠 Live Demo":
             </div>
             """, unsafe_allow_html=True)
 
-    # ---- Sample images ----
+    # ---- Sample Images ----
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div class='clabel'>OR TRY A SAMPLE IMAGE</div>", unsafe_allow_html=True)
+    st.markdown("<div class='clabel'>OR TRY A SAMPLE IMAGE — SELECT CATEGORY AND CLICK TO LOAD</div>",
+                unsafe_allow_html=True)
 
     sample_cat_display = st.selectbox(
         "Choose category",
@@ -751,10 +855,11 @@ if page == "🏠 Live Demo":
     cat_key = sample_cat_display.lower().replace(' ','_')
     files   = SAMPLE_FILES.get(cat_key, ['normal_01.png', None, None])
     labels  = ['✅ Normal', '⚠️ Anomaly Type 1', '⚠️ Anomaly Type 2']
+    border_classes = ['normal', 'anomaly', 'anomaly']
     colors  = ['#10b981', '#ef4444', '#ef4444']
 
     s_cols = st.columns(3, gap="medium")
-    for i, (fn, lbl, clr) in enumerate(zip(files, labels, colors)):
+    for i, (fn, lbl, bc, clr) in enumerate(zip(files, labels, border_classes, colors)):
         with s_cols[i]:
             if fn:
                 img = fetch_sample(cat_key, fn)
@@ -764,9 +869,11 @@ if page == "🏠 Live Demo":
                     <div style="text-align:center; color:{clr}; font-size:0.75rem;
                                 font-weight:600; margin:5px 0 6px;">{lbl}</div>
                     """, unsafe_allow_html=True)
-                    if st.button(f"Use this image", key=f"use_sample_{i}_{cat_key}"):
+                    if st.button(f"Load this image", key=f"use_{i}_{cat_key}"):
                         st.session_state.selected_sample_img  = img
                         st.session_state.selected_sample_name = f"{sample_cat_display} — {lbl}"
+                        st.session_state.analysis_done = False
+                        st.toast(f"✅ Loaded: {sample_cat_display} {lbl}", icon="🖼️")
                         st.rerun()
             else:
                 st.markdown("""
@@ -776,10 +883,9 @@ if page == "🏠 Live Demo":
                 </div>
                 """, unsafe_allow_html=True)
 
-    # ---- Determine image to analyze ----
+    # ---- Determine image ----
     analyze_img   = None
     analyze_label = "Unknown"
-
     if uploaded_file is not None:
         analyze_img   = Image.open(uploaded_file).convert("RGB")
         analyze_label = uploaded_file.name
@@ -791,115 +897,125 @@ if page == "🏠 Live Demo":
     st.markdown("<br>", unsafe_allow_html=True)
     b1, b2, b3 = st.columns([1,1,1])
     with b2:
-        go = st.button(
-            "🔍  Analyze Image",
-            disabled=(analyze_img is None),
-            use_container_width=True
-        )
+        go = st.button("🔍  Analyze Image", disabled=(analyze_img is None), use_container_width=True)
 
-    # ---- Results ----
+    # ---- Run analysis ----
     if go and analyze_img:
-        with st.spinner("Running AI analysis..."):
-            pred, conf, p_norm, p_anom, cam_fig = run_prediction(model, analyze_img)
+        with st.spinner("🧠 Running AI analysis..."):
+            pred, conf, p_norm, p_anom, orig_np, overlay_np = run_prediction(model, analyze_img)
+        st.session_state.analysis_done    = True
+        st.session_state.analysis_results = (pred, conf, p_norm, p_anom, orig_np, overlay_np, analyze_label)
 
-        st.markdown("<hr style='border-color:#1e2d3d; margin:32px 0 24px;'>", unsafe_allow_html=True)
+    # ---- Show results ----
+    if st.session_state.analysis_done and st.session_state.analysis_results:
+        pred, conf, p_norm, p_anom, orig_np, overlay_np, analyze_label = st.session_state.analysis_results
+
+        st.markdown("<hr class='divider'>", unsafe_allow_html=True)
         st.markdown(f"""
-        <div class="eyebrow">ANALYSIS COMPLETE</div>
-        <div class="sec-title" style="margin-bottom:4px;">Prediction Results</div>
-        <div style="color:#6e7681; font-size:0.82rem; margin-bottom:24px; font-family:'JetBrains Mono',monospace;">
-            {analyze_label} &nbsp;·&nbsp; Model: ConvNeXtTiny
+        <div class="anim-slide">
+            <div class="eyebrow">ANALYSIS COMPLETE</div>
+            <div class="sec-title" style="margin-bottom:4px;">Prediction Results</div>
+            <div style="color:#6e7681; font-size:0.8rem; margin-bottom:24px;
+                        font-family:'JetBrains Mono',monospace;">
+                {analyze_label} &nbsp;·&nbsp; Model: ConvNeXtTiny
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-        r1, r2, r3 = st.columns([1.1, 1.2, 0.9], gap="large")
+        r1, r2, r3 = st.columns([1.1, 1.4, 1], gap="large")
 
         with r1:
             if pred == 0:
                 st.markdown(f"""
-                <div class="res-pass">
+                <div class="res-pass anim-scale">
                     <div class="res-icon">✅</div>
                     <div class="res-verdict" style="color:#10b981;">NORMAL</div>
-                    <div class="res-sub">No defect detected in this image</div>
+                    <div class="res-sub">No defect detected</div>
                     <div class="res-conf" style="color:#10b981;">{conf*100:.1f}% confident</div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
-                <div class="res-fail">
+                <div class="res-fail anim-scale">
                     <div class="res-icon">⚠️</div>
                     <div class="res-verdict" style="color:#ef4444;">ANOMALOUS</div>
-                    <div class="res-sub">Defect detected in this image</div>
+                    <div class="res-sub">Defect detected</div>
                     <div class="res-conf" style="color:#ef4444;">{conf*100:.1f}% confident</div>
                 </div>
                 """, unsafe_allow_html=True)
 
         with r2:
-            st.markdown("<div class='clabel'>CONFIDENCE BREAKDOWN</div>", unsafe_allow_html=True)
-            st.markdown(f"""
-            <div class="conf-row" style="margin-top:8px;">
-                <span class="conf-label" style="color:#10b981;">✅ Normal</span>
-                <span class="conf-val">{p_norm*100:.1f}%</span>
-            </div>
-            """, unsafe_allow_html=True)
-            st.progress(p_norm)
+            st.markdown("<div class='clabel'>CONFIDENCE GAUGES</div>", unsafe_allow_html=True)
+            g_col1, g_col2 = st.columns(2)
+            with g_col1:
+                st.plotly_chart(make_gauge(p_norm, "NORMAL", "#10b981"),
+                                use_container_width=True, config={'displayModeBar': False})
+            with g_col2:
+                st.plotly_chart(make_gauge(p_anom, "ANOMALOUS", "#ef4444"),
+                                use_container_width=True, config={'displayModeBar': False})
 
-            st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-
-            st.markdown(f"""
-            <div class="conf-row">
-                <span class="conf-label" style="color:#ef4444;">⚠️ Anomalous</span>
-                <span class="conf-val">{p_anom*100:.1f}%</span>
-            </div>
-            """, unsafe_allow_html=True)
-            st.progress(p_anom)
-
-            # Decision bar
-            st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
             dominant_color = "#10b981" if pred == 0 else "#ef4444"
             dominant_label = "NORMAL" if pred == 0 else "ANOMALOUS"
             st.markdown(f"""
             <div style="background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
-                        border-radius:10px; padding:14px; text-align:center;">
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
-                            color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">VERDICT</div>
+                        border-radius:10px; padding:12px; text-align:center; margin-top:4px;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.62rem;
+                            color:#484f58; margin-bottom:4px; letter-spacing:0.1em;">FINAL VERDICT</div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem;
-                            font-weight:800; color:{dominant_color};">
-                    {dominant_label}
-                </div>
-                <div style="font-size:0.78rem; color:#6e7681; margin-top:4px;">
-                    with {conf*100:.1f}% confidence
+                            font-weight:800; color:{dominant_color};">{dominant_label}</div>
+                <div style="font-size:0.76rem; color:#6e7681; margin-top:2px;">
+                    {conf*100:.1f}% confidence
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
         with r3:
             st.markdown("<div class='clabel'>MODEL STATS</div>", unsafe_allow_html=True)
-            for val, lbl in [("ConvNeXtTiny","Architecture"),
-                              ("90.66%","Test Accuracy"),
-                              ("0.9544","ROC-AUC"),
-                              ("4.4ms","Inference Time"),
-                              ("15.7M","Parameters")]:
+            for v, l in [("ConvNeXtTiny","Architecture"),("90.66%","Test Accuracy"),
+                         ("0.9544","ROC-AUC"),("4.4ms","Inference"),("15.7M","Parameters")]:
                 st.markdown(f"""
-                <div class="kpi" style="margin-bottom:8px; padding:12px 16px;">
-                    <div style="font-family:'Space Grotesk',sans-serif; font-size:0.95rem;
-                                font-weight:700; color:#3b82f6;">{val}</div>
-                    <div class="kpi-l">{lbl}</div>
+                <div class="kpi" style="margin-bottom:8px; padding:10px 14px;">
+                    <div style="font-family:'Space Grotesk',sans-serif; font-size:0.92rem;
+                                font-weight:700; color:#3b82f6;">{v}</div>
+                    <div class="kpi-l">{l}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-        # GradCAM
+        # ---- Interactive Grad-CAM Slider ----
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("<div class='clabel'>GRAD-CAM VISUAL EXPLANATION</div>", unsafe_allow_html=True)
+        st.markdown("<div class='clabel'>GRAD-CAM VISUAL EXPLANATION — DRAG SLIDER TO COMPARE</div>",
+                    unsafe_allow_html=True)
         st.markdown("""
         <div class="infobox" style="margin-bottom:16px;">
-            <strong style="color:#3b82f6;">How to read this:</strong>
-            The heatmap shows <em>where the model looked</em> when making its decision.
-            🔴 <strong>Red/yellow</strong> = high attention regions that influenced the prediction.
-            🔵 <strong>Blue</strong> = low attention regions that were mostly ignored.
-            For anomalous images, red should highlight the actual defect area.
+            <strong style="color:#3b82f6;">Interactive comparison:</strong>
+            Use the slider below to compare the original image with the Grad-CAM heatmap overlay.
+            🔴 <strong>Red/yellow</strong> = high model attention.
+            🔵 <strong>Blue</strong> = low attention areas.
         </div>
         """, unsafe_allow_html=True)
-        st.image(cam_fig, use_column_width=True)
+
+        # Slider using Streamlit's built-in slider
+        slider_val = st.slider(
+            "← Original Image | Grad-CAM Overlay →",
+            min_value=0, max_value=100, value=50,
+            key="gradcam_slider"
+        )
+
+        # Blend based on slider value
+        blend_ratio = slider_val / 100
+        blended = (1 - blend_ratio) * orig_np + blend_ratio * overlay_np
+        blended = np.clip(blended, 0, 1)
+
+        # Show blended image
+        st.image(blended, use_column_width=True,
+                 caption=f"{'Original' if slider_val < 10 else 'Grad-CAM Overlay' if slider_val > 90 else f'Blend: {slider_val}% Grad-CAM'}")
+
+        # Side by side comparison
+        comp_col1, comp_col2 = st.columns(2)
+        with comp_col1:
+            st.image(orig_np, use_column_width=True, caption="Original Image")
+        with comp_col2:
+            st.image(overlay_np, use_column_width=True, caption="Full Grad-CAM Overlay")
 
     footer()
 
@@ -911,20 +1027,14 @@ elif page == "📋 Project Info":
 
     st.markdown("""
     <div class="hero">
-        <div class="badge">RESEARCH PROJECT · SS26</div>
-        <div class="display-title">Project Overview</div>
-        <p class="display-sub" style="margin-top:14px;">
+        <div class="badge"><span class="dot"></span> RESEARCH PROJECT · SS26</div>
+        <div class="typing-title">Project Overview</div>
+        <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:14px;
+                  max-width:600px; margin-left:auto; margin-right:auto;">
             Explainable Multi-Product Industrial Anomaly Classification
             using CNN Transfer Learning and Cross-Category Evaluation
         </p>
     </div>
-    """, unsafe_allow_html=True)
-
-    # Problem
-    st.markdown("""
-    <div class="eyebrow">THE PROBLEM</div>
-    <div class="sec-title">Why Automated Defect Detection?</div>
-    <div class="sec-body" style="margin-bottom:24px;"></div>
     """, unsafe_allow_html=True)
 
     p1, p2 = st.columns(2, gap="large")
@@ -933,11 +1043,13 @@ elif page == "📋 Project Info":
         <div class="gcard">
             <div style="font-size:2rem; margin-bottom:12px;">🏭</div>
             <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                        color:#f0f6fc; margin-bottom:10px;">Manual Inspection is Broken</div>
+                        color:#f0f6fc; margin-bottom:10px; font-size:0.95rem;">
+                Manual Inspection is Broken
+            </div>
             <div class="sec-body" style="font-size:0.84rem;">
-                In modern manufacturing lines, human inspectors examine thousands
-                of products per hour — slow, expensive, inconsistent, and prone to
-                fatigue errors. One missed defect can cause recalls and safety hazards.
+                Manufacturing lines require inspecting thousands of products per hour.
+                Human inspection is slow, expensive, and prone to fatigue errors.
+                One missed defect can cause costly recalls and safety hazards.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -946,7 +1058,9 @@ elif page == "📋 Project Info":
         <div class="gcard">
             <div style="font-size:2rem; margin-bottom:12px;">🤖</div>
             <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                        color:#f0f6fc; margin-bottom:10px;">AI as the Solution</div>
+                        color:#f0f6fc; margin-bottom:10px; font-size:0.95rem;">
+                AI as the Solution
+            </div>
             <div class="sec-body" style="font-size:0.84rem;">
                 Deep learning inspects images in milliseconds with consistent accuracy.
                 This project builds, compares, and explains three CNN architectures
@@ -961,14 +1075,14 @@ elif page == "📋 Project Info":
     <div class="eyebrow">DATASET</div>
     <div class="sec-title">MVTec Anomaly Detection</div>
     <div class="sec-body" style="margin-bottom:20px;">
-        The gold standard benchmark for industrial anomaly detection, containing
-        high-resolution images of 15 industrial products and textures.
+        The gold standard benchmark for industrial anomaly detection.
     </div>
     """, unsafe_allow_html=True)
 
     dcols = st.columns(4)
-    for col, v, l in zip(dcols, ["5,354","15","73","2"],
-                         ["Total Images","Categories","Defect Types","Classes (Normal/Anomaly)"]):
+    for col, v, l in zip(dcols,
+        ["5,354","15","73","2"],
+        ["Total Images","Categories","Defect Types","Classes"]):
         with col:
             st.markdown(f"""<div class="kpi"><div class="kpi-v">{v}</div><div class="kpi-l">{l}</div></div>""",
                         unsafe_allow_html=True)
@@ -993,28 +1107,25 @@ elif page == "📋 Project Info":
     st.markdown("""
     <div class="eyebrow">METHODOLOGY</div>
     <div class="sec-title">Research Pipeline</div>
-    <div class="sec-body" style="margin-bottom:20px;">
-        A systematic 6-stage pipeline from raw data to deployed, explainable AI model.
-    </div>
+    <div class="sec-body" style="margin-bottom:20px;">A systematic 6-stage pipeline from raw data to deployed AI.</div>
     """, unsafe_allow_html=True)
 
     pcols = st.columns(6)
-    steps = [
-        ("1","Data Loading","15 categories\n5K+ images","#3b82f6"),
-        ("2","Preprocessing","Resize 224×224\nNormalize & Augment","#3b82f6"),
-        ("3","Training","3 CNN models\nEarly stopping","#3b82f6"),
-        ("4","Evaluation","F1, AUC\nConfusion Matrix","#3b82f6"),
-        ("5","Explainability","Grad-CAM\n+ SHAP","#3b82f6"),
-        ("6","Deployment","Streamlit\nWeb App","#10b981"),
-    ]
-    for col, (num, name, desc, clr) in zip(pcols, steps):
+    for col, (num, name, desc, clr) in zip(pcols, [
+        ("1","Data Loading","15 categories · 5K+ images","#3b82f6"),
+        ("2","Preprocessing","Resize · Normalize · Augment","#3b82f6"),
+        ("3","Training","3 CNN models · Early stopping","#3b82f6"),
+        ("4","Evaluation","F1 · AUC · Confusion Matrix","#3b82f6"),
+        ("5","Explainability","Grad-CAM · SHAP analysis","#3b82f6"),
+        ("6","Deployment","Streamlit · Web App","#10b981"),
+    ]):
         with col:
             st.markdown(f"""
             <div class="pstep">
                 <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
                             font-weight:800; color:{clr};">{num}</div>
-                <div style="font-size:0.8rem; font-weight:600; color:#f0f6fc; margin-top:6px;">{name}</div>
-                <div style="font-size:0.7rem; color:#6e7681; margin-top:4px; white-space:pre-line;">{desc}</div>
+                <div style="font-size:0.78rem; font-weight:600; color:#f0f6fc; margin-top:6px;">{name}</div>
+                <div style="font-size:0.68rem; color:#6e7681; margin-top:4px;">{desc}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1023,66 +1134,40 @@ elif page == "📋 Project Info":
     st.markdown("""
     <div class="eyebrow">MODELS</div>
     <div class="sec-title">Three Architectures Compared</div>
-    <div class="sec-body" style="margin-bottom:20px;">From a simple custom baseline to state-of-the-art transfer learning.</div>
+    <div class="sec-body" style="margin-bottom:20px;">From a simple baseline to state-of-the-art transfer learning.</div>
     """, unsafe_allow_html=True)
 
     m1, m2, m3 = st.columns(3, gap="large")
-    with m1:
-        st.markdown("""
-        <div class="mcard">
-            <div style="font-size:2rem;">🏗️</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700;
-                        color:#f0f6fc; margin:10px 0 4px;">Custom CNN</div>
-            <div class="eyebrow" style="color:#484f58;">BASELINE</div>
-            <div class="sec-body" style="font-size:0.82rem; margin-top:8px;">
-                4 convolutional blocks built from scratch. No pretrained weights.
-                Serves as our performance lower bound.
+    for col, icon, name, tag, tagcol, desc, params, acc, acc_col in [
+        (m1,"🏗️","Custom CNN","BASELINE","#484f58",
+         "4 convolutional blocks built from scratch. No pretrained weights. Serves as our performance baseline.",
+         "422,530 params · 1.63 MB","63.77%","#8b949e"),
+        (m2,"⚡","EfficientNetV2S","TRANSFER LEARNING","#3b82f6",
+         "Pretrained on ImageNet. Two-stage training: frozen backbone, then partial fine-tuning.",
+         "15.2M params · 79.1 MB","86.93%","#3b82f6"),
+        (m3,"🏆","ConvNeXtTiny","BEST MODEL ★","#10b981",
+         "Modern ConvNet pretrained on ImageNet. Outperformed all models across every metric.",
+         "15.7M params · 106.95 MB","90.66%","#10b981"),
+    ]:
+        with col:
+            cls = "best" if "BEST" in tag else "mid" if "TRANSFER" in tag else ""
+            st.markdown(f"""
+            <div class="mcard {cls}">
+                <div style="font-size:2rem;">{icon}</div>
+                <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem;
+                            font-weight:700; color:#f0f6fc; margin:10px 0 4px;">{name}</div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
+                            color:{tagcol}; letter-spacing:0.1em; margin-bottom:12px;">{tag}</div>
+                <div class="sec-body" style="font-size:0.82rem;">{desc}</div>
+                <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e2d3d;">
+                    <div style="color:#6e7681; font-size:0.72rem;">{params}</div>
+                    <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
+                                font-weight:800; color:{acc_col}; margin-top:4px;">{acc}</div>
+                </div>
             </div>
-            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e2d3d;">
-                <div style="color:#6e7681; font-size:0.72rem;">422,530 params · 1.63 MB</div>
-                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
-                            font-weight:800; color:#8b949e; margin-top:4px;">63.77%</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with m2:
-        st.markdown("""
-        <div class="mcard mid">
-            <div style="font-size:2rem;">⚡</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700;
-                        color:#f0f6fc; margin:10px 0 4px;">EfficientNetV2S</div>
-            <div class="eyebrow">TRANSFER LEARNING</div>
-            <div class="sec-body" style="font-size:0.82rem; margin-top:8px;">
-                Pretrained on ImageNet. Two-stage training: frozen backbone then
-                partial fine-tuning of last 2 blocks.
-            </div>
-            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e2d3d;">
-                <div style="color:#6e7681; font-size:0.72rem;">15.2M params · 79.1 MB</div>
-                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
-                            font-weight:800; color:#3b82f6; margin-top:4px;">86.93%</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with m3:
-        st.markdown("""
-        <div class="mcard best">
-            <div style="font-size:2rem;">🏆</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700;
-                        color:#f0f6fc; margin:10px 0 4px;">ConvNeXtTiny</div>
-            <div class="eyebrow" style="color:#10b981;">BEST MODEL ★</div>
-            <div class="sec-body" style="font-size:0.82rem; margin-top:8px;">
-                Modern ConvNet architecture pretrained on ImageNet.
-                Outperformed all models across every evaluation metric.
-            </div>
-            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e2d3d;">
-                <div style="color:#6e7681; font-size:0.72rem;">15.7M params · 106.95 MB</div>
-                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
-                            font-weight:800; color:#10b981; margin-top:4px;">90.66%</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-    # Tech stack
+    # Tech
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">TECHNOLOGY</div>
@@ -1093,7 +1178,7 @@ elif page == "📋 Project Info":
         <span class="tbadge">EfficientNetV2S</span><span class="tbadge">Grad-CAM</span>
         <span class="tbadge">SHAP</span><span class="tbadge">OpenCV</span>
         <span class="tbadge">Scikit-learn</span><span class="tbadge">Matplotlib</span>
-        <span class="tbadge">Seaborn</span><span class="tbadge">Streamlit</span>
+        <span class="tbadge">Plotly</span><span class="tbadge">Streamlit</span>
         <span class="tbadge">Kaggle GPU T4×2</span><span class="tbadge">Hugging Face</span>
     </div>
     """, unsafe_allow_html=True)
@@ -1108,9 +1193,10 @@ elif page == "📊 Results":
 
     st.markdown("""
     <div class="hero">
-        <div class="badge">EXPERIMENTAL RESULTS</div>
-        <div class="display-title">Model Performance</div>
-        <p class="display-sub" style="margin-top:14px;">
+        <div class="badge"><span class="dot"></span> EXPERIMENTAL RESULTS</div>
+        <div class="typing-title">Model Performance</div>
+        <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:14px;
+                  max-width:560px; margin-left:auto; margin-right:auto;">
             Complete evaluation of all 3 models on the held-out test set.
             ConvNeXtTiny achieved best results across every metric.
         </p>
@@ -1121,12 +1207,12 @@ elif page == "📊 Results":
     kcols = st.columns(5)
     for col, v, l in zip(kcols,
         ["90.66%","0.9544","0.8706","0.8916","4.4ms"],
-        ["Best Accuracy","Best ROC-AUC","Best Macro F1","Best PR-AUC","Best Inference"]):
+        ["Best Accuracy","Best ROC-AUC","Best Macro F1","Best PR-AUC","Fastest Inference"]):
         with col:
             st.markdown(f"""<div class="kpi"><div class="kpi-v">{v}</div><div class="kpi-l">{l}</div></div>""",
                         unsafe_allow_html=True)
 
-    # Table
+    # Interactive Plotly table
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">COMPARISON TABLE</div>
@@ -1136,10 +1222,7 @@ elif page == "📊 Results":
     df = pd.DataFrame({
         "Model":           ["Custom CNN","EfficientNetV2S","ConvNeXtTiny ⭐"],
         "Accuracy":        [0.6377,0.8693,0.9066],
-        "Macro Precision": [0.5409,0.8318,0.8697],
-        "Macro Recall":    [0.5481,0.7949,0.8636],
         "Macro F1":        [0.5499,0.8142,0.8706],
-        "Weighted F1":     [0.6531,0.8674,0.9044],
         "ROC-AUC":         [0.5775,0.9025,0.9544],
         "PR-AUC":          [0.2821,0.8159,0.8916],
         "Inference (ms)":  [0.790,3.154,4.401],
@@ -1148,13 +1231,114 @@ elif page == "📊 Results":
     })
     st.dataframe(df, use_container_width=True, hide_index=True)
 
-    # Category bar chart
+    # Interactive Plotly bar chart
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="eyebrow">INTERACTIVE CHART</div>
+    <div class="sec-title">Select Metric to Compare</div>
+    """, unsafe_allow_html=True)
+
+    metric = st.selectbox(
+        "Choose metric",
+        ["Accuracy","Macro F1","ROC-AUC","PR-AUC","Inference (ms)","Params (M)","Size (MB)"],
+        label_visibility="collapsed"
+    )
+
+    bar_colors_map = {
+        "Custom CNN":       "#6e7681",
+        "EfficientNetV2S":  "#3b82f6",
+        "ConvNeXtTiny ⭐": "#10b981"
+    }
+
+    fig = go.Figure()
+    for _, row in df.iterrows():
+        fig.add_trace(go.Bar(
+            x=[row["Model"]],
+            y=[row[metric]],
+            name=row["Model"],
+            marker_color=bar_colors_map[row["Model"]],
+            text=[f"{row[metric]:.4f}"],
+            textposition='outside',
+            textfont=dict(color='#8b949e', size=11)
+        ))
+
+    fig.update_layout(
+        paper_bgcolor='#0d1117',
+        plot_bgcolor='#0d1117',
+        font=dict(color='#8b949e', family='Inter'),
+        showlegend=False,
+        height=350,
+        margin=dict(t=20, b=20, l=20, r=20),
+        xaxis=dict(gridcolor='#1e2d3d', tickfont=dict(color='#8b949e')),
+        yaxis=dict(gridcolor='#1e2d3d', tickfont=dict(color='#8b949e')),
+        bargap=0.4,
+    )
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+    # Radar chart
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="eyebrow">RADAR CHART</div>
+    <div class="sec-title">Multi-Metric Comparison</div>
+    <div class="sec-body" style="margin-bottom:16px;">
+        A spider chart comparing all models across key performance dimensions.
+    </div>
+    """, unsafe_allow_html=True)
+
+    categories_radar = ['Accuracy','Macro F1','ROC-AUC','PR-AUC','Speed (inv)']
+    # Speed: invert inference time (lower = better), normalize to 0-1
+    speed_scores = [1.0, 0.25, 0.18]  # Custom CNN fastest
+
+    model_scores = {
+        'Custom CNN':       [0.6377, 0.5499, 0.5775, 0.2821, 1.0],
+        'EfficientNetV2S':  [0.8693, 0.8142, 0.9025, 0.8159, 0.25],
+        'ConvNeXtTiny':     [0.9066, 0.8706, 0.9544, 0.8916, 0.18],
+    }
+    radar_colors = ['#6e7681','#3b82f6','#10b981']
+
+    fig_r = go.Figure()
+    for (model_name, scores), color in zip(model_scores.items(), radar_colors):
+        fig_r.add_trace(go.Scatterpolar(
+            r=scores + [scores[0]],
+            theta=categories_radar + [categories_radar[0]],
+            fill='toself',
+            fillcolor=color.replace('#','rgba(') + ',0.1)',
+            line=dict(color=color, width=2),
+            name=model_name,
+        ))
+
+    fig_r.update_layout(
+        polar=dict(
+            bgcolor='#0d1117',
+            radialaxis=dict(
+                visible=True, range=[0, 1],
+                gridcolor='#1e2d3d', tickfont=dict(color='#6e7681', size=9),
+                linecolor='#1e2d3d'
+            ),
+            angularaxis=dict(
+                gridcolor='#1e2d3d',
+                tickfont=dict(color='#8b949e', size=10),
+                linecolor='#1e2d3d'
+            )
+        ),
+        paper_bgcolor='#0d1117',
+        font=dict(color='#8b949e'),
+        legend=dict(
+            bgcolor='#0d1117', bordercolor='#1e2d3d', borderwidth=1,
+            font=dict(color='#8b949e')
+        ),
+        height=400,
+        margin=dict(t=20, b=20, l=60, r=60),
+    )
+    st.plotly_chart(fig_r, use_container_width=True, config={'displayModeBar': False})
+
+    # Per-category
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">CATEGORY ANALYSIS</div>
-    <div class="sec-title">Per-Category Accuracy — ConvNeXtTiny</div>
-    <div class="sec-body" style="margin-bottom:20px;">
-        🟢 Green = above 90% &nbsp;|&nbsp; 🔵 Blue = 80–90% &nbsp;|&nbsp; 🔴 Red = below 80%
+    <div class="sec-title">Per-Category Accuracy</div>
+    <div class="sec-body" style="margin-bottom:16px;">
+        🟢 above 90% &nbsp;·&nbsp; 🔵 80–90% &nbsp;·&nbsp; 🔴 below 80%
     </div>
     """, unsafe_allow_html=True)
 
@@ -1167,27 +1351,30 @@ elif page == "📊 Results":
                      0.87,0.82,0.70],
     })
 
-    fig, ax = plt.subplots(figsize=(14, 4.5))
-    fig.patch.set_facecolor('#0d1117')
-    ax.set_facecolor('#0d1117')
-    bar_colors = ['#10b981' if v >= 0.90 else '#3b82f6' if v >= 0.80 else '#ef4444'
-                  for v in cat_data["Accuracy"]]
-    bars = ax.bar(cat_data["Category"], cat_data["Accuracy"],
-                  color=bar_colors, edgecolor='none', width=0.6)
-    ax.axhline(y=cat_data["Accuracy"].mean(), color='#f59e0b', linestyle='--',
-               linewidth=1.5, label=f'Mean = {cat_data["Accuracy"].mean():.2f}', alpha=0.8)
-    ax.set_ylim(0, 1.12)
-    ax.tick_params(colors='#6e7681', axis='both', labelsize=9)
-    ax.tick_params(axis='x', rotation=30)
-    for sp in ax.spines.values(): sp.set_color('#1e2d3d')
-    ax.set_ylabel("Accuracy", color='#6e7681', fontsize=9)
-    for bar, val in zip(bars, cat_data["Accuracy"]):
-        ax.text(bar.get_x()+bar.get_width()/2, val+0.012,
-                f'{val:.0%}', ha='center', fontsize=8, color='#8b949e')
-    ax.legend(facecolor='#0d1117', labelcolor='#f59e0b', edgecolor='#1e2d3d', fontsize=9)
-    plt.tight_layout()
-    st.pyplot(fig)
-    plt.close()
+    bar_clrs = ['#10b981' if v >= 0.90 else '#3b82f6' if v >= 0.80 else '#ef4444'
+                for v in cat_data["Accuracy"]]
+
+    fig_c = go.Figure(go.Bar(
+        x=cat_data["Category"],
+        y=cat_data["Accuracy"],
+        marker_color=bar_clrs,
+        text=[f'{v:.0%}' for v in cat_data["Accuracy"]],
+        textposition='outside',
+        textfont=dict(color='#8b949e', size=10),
+    ))
+    fig_c.add_hline(y=cat_data["Accuracy"].mean(), line_dash="dash",
+                    line_color="#f59e0b", annotation_text=f"Mean: {cat_data['Accuracy'].mean():.2f}",
+                    annotation_font_color="#f59e0b")
+    fig_c.update_layout(
+        paper_bgcolor='#0d1117', plot_bgcolor='#0d1117',
+        font=dict(color='#8b949e', family='Inter'),
+        height=380, showlegend=False,
+        margin=dict(t=30, b=60, l=20, r=20),
+        xaxis=dict(tickangle=-30, tickfont=dict(color='#8b949e', size=10), gridcolor='#1e2d3d'),
+        yaxis=dict(range=[0, 1.12], gridcolor='#1e2d3d', tickfont=dict(color='#8b949e')),
+        bargap=0.3,
+    )
+    st.plotly_chart(fig_c, use_container_width=True, config={'displayModeBar': False})
 
     # RQs
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1196,26 +1383,25 @@ elif page == "📊 Results":
     <div class="sec-title">Research Questions Answered</div>
     """, unsafe_allow_html=True)
 
-    rqs = [
+    for rq, q, a in [
         ("RQ1","Which architecture achieves strongest performance?",
          "ConvNeXtTiny — 90.66% accuracy, 0.9544 ROC-AUC, best across all metrics."),
         ("RQ2","How much does performance vary between categories?",
          "30% range — Carpet achieved 100%, Toothbrush was hardest at 70%."),
         ("RQ3","Do Grad-CAM and SHAP overlap with anomalous regions?",
-         "Yes — correct predictions consistently focus on the actual defect areas."),
+         "Yes — correct predictions consistently highlight the actual defect areas."),
         ("RQ4","Which categories produce highest false-negative rates?",
          "Toothbrush and Screw — fine-grained texture defects are hardest to detect."),
         ("RQ5","Can a compact model give a practical trade-off?",
-         "Custom CNN at 0.790ms/image is 5.6× faster but 27% less accurate."),
-    ]
-    for rq, q, a in rqs:
+         "Custom CNN at 0.790ms/image is 5.6× faster but 27% less accurate than ConvNeXtTiny."),
+    ]:
         st.markdown(f"""
-        <div class="gcard" style="padding:18px 22px; margin-bottom:10px;">
+        <div class="gcard" style="padding:16px 20px; margin-bottom:8px;">
             <div style="display:flex; gap:14px; align-items:flex-start;">
                 <div style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25);
                             color:#3b82f6; padding:4px 12px; border-radius:8px;
-                            font-family:'JetBrains Mono',monospace; font-size:0.72rem;
-                            font-weight:600; white-space:nowrap; align-self:flex-start;">{rq}</div>
+                            font-family:'JetBrains Mono',monospace; font-size:0.7rem;
+                            font-weight:600; white-space:nowrap;">{rq}</div>
                 <div>
                     <div style="color:#f0f6fc; font-size:0.86rem; font-weight:500;">{q}</div>
                     <div style="color:#10b981; font-size:0.82rem; margin-top:5px;">→ {a}</div>
@@ -1234,23 +1420,13 @@ elif page == "🔬 Explainability":
 
     st.markdown("""
     <div class="hero">
-        <div class="badge">EXPLAINABLE AI · XAI</div>
-        <div class="display-title">Why Trust<br>the Model?</div>
-        <p class="display-sub" style="margin-top:14px;">
+        <div class="badge"><span class="dot"></span> EXPLAINABLE AI · XAI</div>
+        <div class="typing-title">Why Trust the Model?</div>
+        <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:14px;
+                  max-width:560px; margin-left:auto; margin-right:auto;">
             High accuracy alone is not enough. We use Grad-CAM and SHAP
-            to verify the model looks at the right parts of every image.
+            to verify the model is looking at the right things.
         </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Grad-CAM
-    st.markdown("""
-    <div class="eyebrow">GRAD-CAM</div>
-    <div class="sec-title">Gradient-weighted Class Activation Maps</div>
-    <div class="sec-body" style="margin-bottom:20px;">
-        Grad-CAM uses gradients flowing into the last convolutional layer to produce
-        a heatmap highlighting which image regions drove the prediction.
-        Red = high influence, Blue = low influence.
     </div>
     """, unsafe_allow_html=True)
 
@@ -1259,9 +1435,9 @@ elif page == "🔬 Explainability":
         ["🎯","❓","⚠️"],
         ["Correct Predictions","Wrong Predictions","Limitations"],
         [
-            "For correctly classified anomalous images, Grad-CAM highlights the actual defect region — scratch, crack, or contamination area.",
-            "For misclassified images, Grad-CAM often reveals the model was focused on background or irrelevant regions — exposing why it failed.",
-            "Grad-CAM produces coarse spatial maps and cannot pinpoint exact pixel-level regions. Use alongside SHAP for a complete picture."
+            "For correctly classified anomalous images, Grad-CAM highlights the actual defect — scratches, cracks, or contamination visible on the product surface.",
+            "For misclassified images, Grad-CAM reveals the model focused on background or irrelevant areas, explaining why the prediction failed.",
+            "Grad-CAM produces coarse spatial maps and cannot pinpoint exact pixel-level regions. Always combine with SHAP for a complete picture."
         ]):
         with col:
             st.markdown(f"""
@@ -1273,14 +1449,13 @@ elif page == "🔬 Explainability":
             </div>
             """, unsafe_allow_html=True)
 
-    # SHAP
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">SHAP</div>
     <div class="sec-title">SHapley Additive exPlanations</div>
     <div class="sec-body" style="margin-bottom:20px;">
-        SHAP assigns each pixel a value showing how much it contributed to the final prediction.
-        Positive values (red) push toward Anomalous. Negative values (blue) push toward Normal.
+        SHAP assigns each pixel a value showing how much it pushed the prediction
+        toward Anomalous (red) or toward Normal (blue).
     </div>
     """, unsafe_allow_html=True)
 
@@ -1289,14 +1464,13 @@ elif page == "🔬 Explainability":
         st.markdown("""
         <div class="gcard">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                <div style="width:14px; height:14px; background:#ef4444; border-radius:3px; flex-shrink:0;"></div>
+                <div style="width:14px; height:14px; background:#ef4444; border-radius:3px;"></div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                            color:#f0f6fc; font-size:0.9rem;">Red — Supports Anomalous</div>
+                            color:#f0f6fc;">Red — Supports Anomalous</div>
             </div>
             <div class="sec-body" style="font-size:0.82rem;">
-                Red pixels push the model toward classifying the image as Anomalous.
-                These typically correspond to actual defect areas — scratches, cracks,
-                contamination, or structural damage visible in the product.
+                Red pixels push the model toward Anomalous classification. These
+                correspond to actual defect areas — scratches, cracks, contamination.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1304,65 +1478,57 @@ elif page == "🔬 Explainability":
         st.markdown("""
         <div class="gcard">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                <div style="width:14px; height:14px; background:#3b82f6; border-radius:3px; flex-shrink:0;"></div>
+                <div style="width:14px; height:14px; background:#3b82f6; border-radius:3px;"></div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                            color:#f0f6fc; font-size:0.9rem;">Blue — Supports Normal</div>
+                            color:#f0f6fc;">Blue — Supports Normal</div>
             </div>
             <div class="sec-body" style="font-size:0.82rem;">
-                Blue pixels work against the anomalous classification — they represent
-                clean, defect-free regions the model recognizes as normal, pulling
-                the prediction back toward the Normal class.
+                Blue pixels work against the anomalous classification — these are
+                clean regions the model recognizes as defect-free.
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # Why XAI matters
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">IMPORTANCE</div>
     <div class="sec-title">Why Explainability Matters</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="gcard">
+    <div class="gcard" style="margin-top:12px;">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px;">
             <div>
-                <div style="font-size:1.4rem; margin-bottom:8px;">🛡️</div>
+                <div style="font-size:1.5rem; margin-bottom:8px;">🛡️</div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
                             color:#f0f6fc; font-size:0.88rem; margin-bottom:6px;">Trust</div>
                 <div class="sec-body" style="font-size:0.8rem;">
-                    Factory operators need to trust the system before replacing human inspectors.
-                    Visual explanations build that trust by showing the reasoning.
+                    Factory operators need to trust the system before replacing
+                    human inspectors. Visual explanations build that trust.
                 </div>
             </div>
             <div>
-                <div style="font-size:1.4rem; margin-bottom:8px;">🐛</div>
+                <div style="font-size:1.5rem; margin-bottom:8px;">🐛</div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
                             color:#f0f6fc; font-size:0.88rem; margin-bottom:6px;">Debugging</div>
                 <div class="sec-body" style="font-size:0.8rem;">
-                    When the model fails, explanations reveal if it focused on
-                    background patterns instead of actual product features.
+                    When the model fails, explanations show whether it was looking
+                    at background patterns instead of actual product features.
                 </div>
             </div>
             <div>
-                <div style="font-size:1.4rem; margin-bottom:8px;">📋</div>
+                <div style="font-size:1.5rem; margin-bottom:8px;">📋</div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
                             color:#f0f6fc; font-size:0.88rem; margin-bottom:6px;">Compliance</div>
                 <div class="sec-body" style="font-size:0.8rem;">
                     In regulated industries, AI decisions must be auditable.
-                    Grad-CAM and SHAP provide the required decision audit trail.
+                    Grad-CAM and SHAP provide the required decision trail.
                 </div>
             </div>
         </div>
     </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="infobox" style="margin-top:16px; border-color:rgba(245,158,11,0.25); background:rgba(245,158,11,0.06);">
-        <strong style="color:#f59e0b;">⚠️ Important caveat:</strong>
-        Attractive heatmaps are not proof of correct reasoning. A model can produce
-        visually plausible Grad-CAM maps while still failing on edge cases.
-        Always use explainability tools alongside rigorous quantitative evaluation.
+    <div class="infobox" style="margin-top:14px; border-color:rgba(245,158,11,0.25);
+                                background:rgba(245,158,11,0.05);">
+        <strong style="color:#f59e0b;">⚠️ Important:</strong>
+        Attractive heatmaps are not proof of correct reasoning. Always combine
+        explainability tools with rigorous quantitative evaluation metrics.
     </div>
     """, unsafe_allow_html=True)
 
@@ -1376,9 +1542,9 @@ elif page == "👤 About":
 
     st.markdown("""
     <div class="hero">
-        <div class="badge">ABOUT</div>
-        <div class="display-title">Abdullah Rashid</div>
-        <p class="display-sub" style="margin-top:14px;">
+        <div class="badge"><span class="dot"></span> ABOUT</div>
+        <div class="typing-title">Abdullah Rashid</div>
+        <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:14px;">
             3rd Semester · Bachelor of Software Engineering<br>
             University of Europe for Applied Sciences, Potsdam · SS26
         </p>
@@ -1390,111 +1556,87 @@ elif page == "👤 About":
     with a1:
         st.markdown("""
         <div class="eyebrow">CONTACT</div>
-        <div class="sec-title">Get in Touch</div>
-        <div class="gcard" style="margin-top:12px;">
+        <div class="sec-title" style="margin-bottom:12px;">Get in Touch</div>
+        <div class="gcard">
             <div style="display:flex; flex-direction:column; gap:18px;">
-                <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:40px; height:40px; min-width:40px; background:rgba(59,130,246,0.1);
-                                border:1px solid rgba(59,130,246,0.2); border-radius:10px;
-                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">📧</div>
-                    <div>
-                        <div style="font-size:0.68rem; color:#6e7681; margin-bottom:3px; font-family:'JetBrains Mono',monospace; letter-spacing:0.08em;">EMAIL</div>
-                        <a href="mailto:abdullahrashid130704@outlook.com"
-                           style="color:#3b82f6; text-decoration:none; font-size:0.86rem;">
-                            abdullahrashid130704@outlook.com
-                        </a>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:40px; height:40px; min-width:40px; background:rgba(59,130,246,0.1);
-                                border:1px solid rgba(59,130,246,0.2); border-radius:10px;
-                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">📞</div>
-                    <div>
-                        <div style="font-size:0.68rem; color:#6e7681; margin-bottom:3px; font-family:'JetBrains Mono',monospace; letter-spacing:0.08em;">PHONE</div>
-                        <div style="color:#f0f6fc; font-size:0.86rem;">+49 15 510 337 507</div>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:40px; height:40px; min-width:40px; background:rgba(59,130,246,0.1);
-                                border:1px solid rgba(59,130,246,0.2); border-radius:10px;
-                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">🔗</div>
-                    <div>
-                        <div style="font-size:0.68rem; color:#6e7681; margin-bottom:3px; font-family:'JetBrains Mono',monospace; letter-spacing:0.08em;">LINKEDIN</div>
-                        <a href="https://linkedin.com/in/abdullahr2004" target="_blank"
-                           style="color:#3b82f6; text-decoration:none; font-size:0.86rem;">
-                            linkedin.com/in/abdullahr2004
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
         """, unsafe_allow_html=True)
 
-    with a2:
-        st.markdown("""
-        <div class="eyebrow">PROJECT LINKS</div>
-        <div class="sec-title">Resources</div>
-        <div class="gcard" style="margin-top:12px;">
-            <div style="display:flex; flex-direction:column; gap:10px;">
-        """, unsafe_allow_html=True)
-
-        links = [
-            ("💻","GitHub Repository","Source code, notebook, all figures",
-             "https://github.com/abdullah1307-git/mvtec-anomaly-classification"),
-            ("📓","Kaggle Notebook","Full executed training notebook",
-             "https://www.kaggle.com/code/abdullah130704/notebook8b312b2661"),
-            ("📊","MVTec AD Dataset","15 categories · 5,354 images",
-             "https://www.kaggle.com/datasets/ipythonx/mvtec-ad"),
-            ("🤗","Hugging Face Model","ConvNeXtTiny weights · 112 MB",
-             "https://huggingface.co/abdullah130704/mvtec-anomaly-model"),
-        ]
-        for icon, title, sub, url in links:
+        for icon, label, val, href in [
+            ("📧","EMAIL","abdullahrashid130704@outlook.com","mailto:abdullahrashid130704@outlook.com"),
+            ("📞","PHONE","+49 15 510 337 507","tel:+4915510337507"),
+            ("🔗","LINKEDIN","linkedin.com/in/abdullahr2004","https://linkedin.com/in/abdullahr2004"),
+        ]:
             st.markdown(f"""
-            <a href="{url}" target="_blank" style="text-decoration:none; display:block;">
-                <div style="display:flex; align-items:center; gap:14px; padding:12px 14px;
-                            background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
-                            border-radius:10px; transition:border-color 0.2s; margin-bottom:8px;">
-                    <div style="font-size:1.3rem;">{icon}</div>
-                    <div>
-                        <div style="color:#f0f6fc; font-size:0.86rem; font-weight:500;">{title}</div>
-                        <div style="color:#6e7681; font-size:0.74rem; margin-top:2px;">{sub}</div>
-                    </div>
-                    <div style="margin-left:auto; color:#484f58; font-size:0.8rem;">↗</div>
+            <a href="{href}" target="_blank" style="text-decoration:none; display:flex; align-items:center; gap:14px;">
+                <div style="width:40px; height:40px; min-width:40px; background:rgba(59,130,246,0.1);
+                            border:1px solid rgba(59,130,246,0.2); border-radius:10px;
+                            display:flex; align-items:center; justify-content:center; font-size:1.1rem;">{icon}</div>
+                <div>
+                    <div style="font-family:'JetBrains Mono',monospace; font-size:0.62rem;
+                                color:#484f58; letter-spacing:0.1em; margin-bottom:2px;">{label}</div>
+                    <div style="color:#3b82f6; font-size:0.85rem;">{val}</div>
                 </div>
             </a>
             """, unsafe_allow_html=True)
 
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-    # Course info
+    with a2:
+        st.markdown("""
+        <div class="eyebrow">PROJECT LINKS</div>
+        <div class="sec-title" style="margin-bottom:12px;">Resources</div>
+        <div class="gcard">
+        """, unsafe_allow_html=True)
+
+        for icon, title, sub, url in [
+            ("💻","GitHub Repository","Source code, notebook, all figures",
+             "https://github.com/abdullah1307-git/mvtec-anomaly-classification"),
+            ("📓","Kaggle Notebook","Full executed training notebook with results",
+             "https://www.kaggle.com/code/abdullah130704/notebook8b312b2661"),
+            ("📊","MVTec AD Dataset","15 categories · 5,354 images · Kaggle",
+             "https://www.kaggle.com/datasets/ipythonx/mvtec-ad"),
+            ("🤗","Hugging Face Model","ConvNeXtTiny weights · 112 MB",
+             "https://huggingface.co/abdullah130704/mvtec-anomaly-model"),
+        ]:
+            st.markdown(f"""
+            <a href="{url}" target="_blank" style="text-decoration:none; display:block; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; gap:14px; padding:12px 14px;
+                            background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
+                            border-radius:10px; transition:all 0.2s;">
+                    <div style="font-size:1.3rem;">{icon}</div>
+                    <div style="flex:1;">
+                        <div style="color:#f0f6fc; font-size:0.86rem; font-weight:500;">{title}</div>
+                        <div style="color:#6e7681; font-size:0.73rem; margin-top:2px;">{sub}</div>
+                    </div>
+                    <div style="color:#484f58; font-size:0.9rem;">↗</div>
+                </div>
+            </a>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">ACADEMIC CONTEXT</div>
-    <div class="sec-title">Course Information</div>
-    <div class="gcard" style="margin-top:12px;">
+    <div class="sec-title" style="margin-bottom:12px;">Course Information</div>
+    <div class="gcard">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:20px;">
-            <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
-                            color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">COURSE</div>
-                <div style="color:#f0f6fc; font-size:0.85rem; font-weight:500;">Machine Learning & Smart Systems</div>
-            </div>
-            <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
-                            color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">UNIVERSITY</div>
-                <div style="color:#f0f6fc; font-size:0.85rem; font-weight:500;">UE for Applied Sciences, Potsdam</div>
-            </div>
-            <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
-                            color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">SEMESTER</div>
-                <div style="color:#f0f6fc; font-size:0.85rem; font-weight:500;">Summer Semester 2026 · 3rd</div>
-            </div>
-            <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
-                            color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">PROGRAMME</div>
-                <div style="color:#f0f6fc; font-size:0.85rem; font-weight:500;">Bachelor of Software Engineering</div>
-            </div>
-        </div>
-    </div>
     """, unsafe_allow_html=True)
+
+    for label, val in [
+        ("COURSE","Machine Learning & Smart Systems"),
+        ("UNIVERSITY","UE for Applied Sciences, Potsdam"),
+        ("SEMESTER","Summer Semester 2026 · 3rd"),
+        ("PROGRAMME","Bachelor of Software Engineering"),
+    ]:
+        st.markdown(f"""
+            <div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.62rem;
+                            color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">{label}</div>
+                <div style="color:#f0f6fc; font-size:0.84rem; font-weight:500;">{val}</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
 
     footer()
