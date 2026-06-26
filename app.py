@@ -661,11 +661,18 @@ if "analysis_results" not in st.session_state:
 nav_cols = st.columns([1.5, 5, 0.3])
 with nav_cols[0]:
     st.markdown("""
-    <div style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:800;
-                background:linear-gradient(135deg,#3b82f6,#818cf8);
-                -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-                background-clip:text; padding:14px 0; white-space:nowrap;">
-        🔍 AnomalyVision
+    <div style="padding:12px 0; white-space:nowrap; display:flex; align-items:center; gap:8px;">
+        <div style="width:32px; height:32px; background:linear-gradient(135deg,#2563eb,#7c3aed);
+                    border-radius:8px; display:flex; align-items:center; justify-content:center;
+                    font-size:1rem; flex-shrink:0; box-shadow:0 2px 8px rgba(37,99,235,0.4);">🔍</div>
+        <div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:800;
+                        background:linear-gradient(135deg,#60a5fa,#a78bfa);
+                        -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+                        background-clip:text; line-height:1.1;">AnomalyVision</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:0.55rem;
+                        color:#484f58; letter-spacing:0.08em; line-height:1;">AI DEFECT DETECTION</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1104,37 +1111,64 @@ if page == "🏠 Live Demo":
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<div class='clabel'>GRAD-CAM VISUAL EXPLANATION — DRAG SLIDER TO COMPARE</div>",
                     unsafe_allow_html=True)
+
         st.markdown("""
-        <div class="infobox" style="margin-bottom:16px;">
+        <div class="infobox" style="margin-bottom:14px;">
             <strong style="color:#3b82f6;">Interactive comparison:</strong>
-            Use the slider below to compare the original image with the Grad-CAM heatmap overlay.
-            🔴 <strong>Red/yellow</strong> = high model attention.
-            🔵 <strong>Blue</strong> = low attention areas.
+            Drag the slider to blend between the original image and Grad-CAM overlay.
+            🔴 <strong>Red/yellow</strong> = high model attention &nbsp;·&nbsp;
+            🔵 <strong>Blue</strong> = low attention
         </div>
         """, unsafe_allow_html=True)
 
-        # Slider using Streamlit's built-in slider
-        slider_val = st.slider(
-            "← Original Image | Grad-CAM Overlay →",
-            min_value=0, max_value=100, value=50,
-            key="gradcam_slider"
-        )
+        # Layout: slider on left, image on right (compact)
+        sl_col, img_col = st.columns([1, 1], gap="large")
 
-        # Blend based on slider value
-        blend_ratio = slider_val / 100
-        blended = (1 - blend_ratio) * orig_np + blend_ratio * overlay_np
-        blended = np.clip(blended, 0, 1)
+        with sl_col:
+            slider_val = st.slider(
+                "Blend level",
+                min_value=0, max_value=100, value=50,
+                key="gradcam_slider",
+                label_visibility="collapsed"
+            )
 
-        # Show blended image
-        st.image(blended, use_column_width=True,
-                 caption=f"{'Original' if slider_val < 10 else 'Grad-CAM Overlay' if slider_val > 90 else f'Blend: {slider_val}% Grad-CAM'}")
+            # Blend labels
+            st.markdown(f"""
+            <div style="display:flex; justify-content:space-between; margin-top:4px;
+                        font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#484f58;">
+                <span>◀ Original</span>
+                <span>Grad-CAM ▶</span>
+            </div>
+            <div style="text-align:center; margin-top:12px;">
+                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.1rem;
+                            font-weight:700; color:#3b82f6;">{slider_val}%</div>
+                <div style="font-size:0.72rem; color:#6e7681; margin-top:2px;">Grad-CAM blend</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        # Side by side comparison
-        comp_col1, comp_col2 = st.columns(2)
-        with comp_col1:
-            st.image(orig_np, use_column_width=True, caption="Original Image")
-        with comp_col2:
-            st.image(overlay_np, use_column_width=True, caption="Full Grad-CAM Overlay")
+            # Show reference images small
+            st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+            ref_c1, ref_c2 = st.columns(2)
+            with ref_c1:
+                st.image(orig_np, caption="Original", use_column_width=True)
+            with ref_c2:
+                st.image(overlay_np, caption="Grad-CAM", use_column_width=True)
+
+        with img_col:
+            # Blended image - constrained size
+            blend_ratio = slider_val / 100
+            blended = np.clip((1-blend_ratio)*orig_np + blend_ratio*overlay_np, 0, 1)
+
+            label = "Original Image" if slider_val < 5 else                     "Full Grad-CAM Overlay" if slider_val > 95 else                     f"Blend: {100-slider_val}% Original + {slider_val}% Grad-CAM"
+
+            st.markdown(f"""
+            <div style="background:#0d1117; border:1px solid #1e2d3d; border-radius:12px;
+                        padding:12px; text-align:center;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
+                            color:#484f58; margin-bottom:8px; letter-spacing:0.1em;">BLENDED RESULT</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.image(blended, use_column_width=True, caption=label)
 
     # Footer always shows at bottom
     st.markdown("<br>", unsafe_allow_html=True)
