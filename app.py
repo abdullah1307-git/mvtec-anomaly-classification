@@ -8,7 +8,6 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import io
-import os
 import requests
 from pathlib import Path
 import pandas as pd
@@ -20,44 +19,82 @@ st.set_page_config(
     page_title="AnomalyVision — Industrial Defect Detection",
     page_icon="🔍",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # ============================================================
-# CSS — Full Design System
+# CSS
 # ============================================================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ---- Reset & Base ---- */
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 #MainMenu, footer, header { visibility: hidden; }
 
-/* ---- App Background ---- */
 .stApp {
     background: #080c14;
     background-image:
-        radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.06) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.04) 0%, transparent 50%);
+        radial-gradient(ellipse at 20% 10%, rgba(59,130,246,0.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 90%, rgba(139,92,246,0.05) 0%, transparent 50%);
 }
 
-/* ---- Sidebar ---- */
-[data-testid="stSidebar"] {
-    background: #0d1117 !important;
-    border-right: 1px solid #1e2d3d !important;
-}
-[data-testid="stSidebar"] * { color: #c9d1d9 !important; }
-[data-testid="stSidebar"] .stRadio label { 
-    padding: 10px 14px !important;
-    border-radius: 8px !important;
-    transition: all 0.2s !important;
+/* Hide default sidebar toggle */
+[data-testid="collapsedControl"] { display: none; }
+[data-testid="stSidebar"] { display: none; }
+
+/* ---- TOP NAV ---- */
+.topnav {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: rgba(8,12,20,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid #1e2d3d;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 58px;
+    margin: -1rem -1rem 2rem -1rem;
 }
 
-/* ---- Typography ---- */
+.topnav-brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3b82f6, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    white-space: nowrap;
+}
+
+.topnav-links {
+    display: flex;
+    gap: 4px;
+}
+
+.navlink {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: #8b949e;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.navlink:hover { color: #f0f6fc; background: rgba(255,255,255,0.06); }
+.navlink.active { color: #3b82f6; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.2); }
+
+/* ---- TYPOGRAPHY ---- */
 .display-title {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 3.8rem;
+    font-size: 3.6rem;
     font-weight: 800;
     line-height: 1.1;
     letter-spacing: -0.03em;
@@ -68,17 +105,16 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 }
 
 .display-sub {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     color: #8b949e;
     line-height: 1.7;
-    font-weight: 400;
-    max-width: 600px;
+    max-width: 580px;
     margin: 0 auto;
 }
 
-.section-eyebrow {
+.eyebrow {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 500;
     color: #3b82f6;
     text-transform: uppercase;
@@ -86,282 +122,286 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     margin-bottom: 8px;
 }
 
-.section-title {
+.sec-title {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.8rem;
+    font-size: 1.7rem;
     font-weight: 700;
     color: #f0f6fc;
-    margin-bottom: 6px;
     letter-spacing: -0.02em;
+    margin-bottom: 6px;
 }
 
-.section-body {
-    color: #8b949e;
-    font-size: 0.92rem;
-    line-height: 1.7;
-}
+.sec-body { color: #8b949e; font-size: 0.9rem; line-height: 1.7; }
 
-/* ---- Hero ---- */
-.hero-wrap {
+/* ---- HERO ---- */
+.hero {
     background: linear-gradient(180deg, #0d1117 0%, #080c14 100%);
     border: 1px solid #1e2d3d;
     border-radius: 20px;
-    padding: 64px 48px;
+    padding: 56px 48px;
     text-align: center;
     position: relative;
     overflow: hidden;
     margin-bottom: 32px;
-    animation: fadeInUp 0.6s ease both;
 }
 
-.hero-wrap::before {
+.hero::before {
     content: '';
     position: absolute;
     top: 0; left: 50%;
     transform: translateX(-50%);
-    width: 600px; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(59,130,246,0.5), transparent);
+    width: 500px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent);
 }
 
-.hero-wrap::after {
+.hero::after {
     content: '';
     position: absolute;
-    top: -200px; left: 50%;
+    top: -150px; left: 50%;
     transform: translateX(-50%);
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(59,130,246,0.09) 0%, transparent 70%);
     pointer-events: none;
 }
 
-.hero-badge {
+.badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     background: rgba(59,130,246,0.1);
     border: 1px solid rgba(59,130,246,0.25);
     color: #60a5fa;
-    padding: 6px 16px;
+    padding: 5px 14px;
     border-radius: 100px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     font-family: 'JetBrains Mono', monospace;
 }
 
-/* ---- Stat Pills ---- */
-.stat-row {
+/* ---- STATS ROW ---- */
+.stats-row {
     display: flex;
     justify-content: center;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
-    margin-top: 32px;
+    margin-top: 28px;
 }
 
-.stat-pill {
+.stat-box {
     background: rgba(255,255,255,0.04);
     border: 1px solid #1e2d3d;
     border-radius: 12px;
-    padding: 14px 24px;
+    padding: 12px 22px;
     text-align: center;
-    min-width: 120px;
-    transition: border-color 0.2s, transform 0.2s;
+    min-width: 100px;
 }
 
-.stat-pill:hover {
-    border-color: rgba(59,130,246,0.4);
-    transform: translateY(-2px);
-}
-
-.stat-value {
+.stat-v {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: #3b82f6;
     line-height: 1;
 }
 
-.stat-label {
-    font-size: 0.72rem;
+.stat-l {
+    font-size: 0.68rem;
     color: #6e7681;
     margin-top: 4px;
-    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
 
-/* ---- Cards ---- */
-.glass-card {
-    background: rgba(13,17,23,0.8);
+/* ---- CARDS ---- */
+.gcard {
+    background: #0d1117;
     border: 1px solid #1e2d3d;
-    border-radius: 16px;
-    padding: 28px;
-    margin-bottom: 16px;
-    backdrop-filter: blur(10px);
-    transition: border-color 0.2s, transform 0.2s;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
 }
 
-.glass-card:hover { border-color: #2d4a6e; }
+.gcard:hover { border-color: #2d4a6e; }
 
-.card-label {
+.clabel {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    font-weight: 500;
+    font-size: 0.65rem;
     color: #484f58;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
-/* ---- Result Cards ---- */
-.result-pass {
-    background: linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.03) 100%);
-    border: 1.5px solid rgba(16,185,129,0.4);
-    border-radius: 16px;
-    padding: 28px;
-    text-align: center;
-    animation: pulseGreen 2s ease infinite;
-}
-
-.result-fail {
-    background: linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.03) 100%);
-    border: 1.5px solid rgba(239,68,68,0.4);
-    border-radius: 16px;
-    padding: 28px;
-    text-align: center;
-    animation: pulseRed 2s ease infinite;
-}
-
-.result-verdict {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 2.2rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    margin: 8px 0 4px;
-}
-
-.result-sub { font-size: 0.85rem; color: #8b949e; }
-
-/* ---- Metric Cards ---- */
-.kpi-card {
+/* ---- KPI ---- */
+.kpi {
     background: #0d1117;
     border: 1px solid #1e2d3d;
     border-radius: 12px;
-    padding: 20px;
+    padding: 18px;
     text-align: center;
     transition: border-color 0.2s, transform 0.15s;
 }
+.kpi:hover { border-color: rgba(59,130,246,0.35); transform: translateY(-2px); }
+.kpi-v { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 700; color: #3b82f6; line-height: 1; }
+.kpi-l { font-size: 0.68rem; color: #6e7681; margin-top: 6px; letter-spacing: 0.04em; }
 
-.kpi-card:hover {
-    border-color: rgba(59,130,246,0.35);
-    transform: translateY(-2px);
+/* ---- RESULT CARDS ---- */
+.res-pass {
+    background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.04));
+    border: 2px solid rgba(16,185,129,0.5);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(16,185,129,0.08);
 }
 
-.kpi-val {
+.res-fail {
+    background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.04));
+    border: 2px solid rgba(239,68,68,0.5);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(239,68,68,0.08);
+}
+
+.res-icon { font-size: 3.5rem; line-height: 1; margin-bottom: 10px; }
+
+.res-verdict {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.7rem;
-    font-weight: 700;
-    color: #3b82f6;
-    line-height: 1;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
 }
 
-.kpi-lbl {
-    font-size: 0.72rem;
-    color: #6e7681;
-    margin-top: 6px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
+.res-conf {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 8px;
 }
 
-/* ---- Info Box ---- */
-.info-pill {
+.res-sub { font-size: 0.82rem; color: #8b949e; margin-top: 4px; }
+
+/* ---- CONFIDENCE BAR ---- */
+.conf-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.conf-label { font-size: 0.83rem; font-weight: 600; }
+.conf-val { font-size: 0.83rem; color: #f0f6fc; font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+
+/* ---- BUTTONS ---- */
+div[data-testid="stButton"] button {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    font-size: 0.9rem !important;
+    padding: 10px 20px !important;
+    transition: opacity 0.2s, transform 0.15s !important;
+    width: 100% !important;
+    letter-spacing: 0.01em !important;
+}
+
+div[data-testid="stButton"] button:hover {
+    opacity: 0.88 !important;
+    transform: translateY(-1px) !important;
+}
+
+div[data-testid="stButton"] button:disabled {
+    background: #1e2d3d !important;
+    color: #484f58 !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+/* Sample use buttons - smaller */
+div[data-testid="stButton"]:has(button[kind="secondary"]) button {
+    background: rgba(59,130,246,0.15) !important;
+    border: 1px solid rgba(59,130,246,0.3) !important;
+    color: #60a5fa !important;
+    font-size: 0.78rem !important;
+    padding: 7px 14px !important;
+}
+
+/* ---- INFO BOX ---- */
+.infobox {
     background: rgba(59,130,246,0.07);
     border: 1px solid rgba(59,130,246,0.18);
-    border-radius: 12px;
-    padding: 14px 18px;
-    font-size: 0.84rem;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 0.82rem;
     color: #8b949e;
     line-height: 1.6;
 }
 
-/* ---- Model Cards ---- */
-.model-card {
+/* ---- SAMPLE IMAGE CARD ---- */
+.sample-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #1e2d3d;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: pointer;
+}
+.sample-wrap:hover { border-color: #3b82f6; transform: translateY(-2px); }
+.sample-wrap.normal { border-color: rgba(16,185,129,0.4); }
+.sample-wrap.anomaly { border-color: rgba(239,68,68,0.3); }
+
+.sample-tag {
+    padding: 5px 0;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ---- SELECTED IMAGE PREVIEW ---- */
+.selected-preview {
+    background: #0d1117;
+    border: 2px solid rgba(59,130,246,0.4);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+}
+
+/* ---- MODEL CARDS ---- */
+.mcard {
     background: #0d1117;
     border: 1px solid #1e2d3d;
     border-radius: 14px;
     padding: 24px;
     height: 100%;
-    transition: border-color 0.2s, transform 0.2s;
+    transition: transform 0.2s, border-color 0.2s;
 }
+.mcard:hover { transform: translateY(-3px); }
+.mcard.best { border-color: rgba(16,185,129,0.4); }
+.mcard.mid  { border-color: rgba(59,130,246,0.3); }
 
-.model-card:hover {
-    transform: translateY(-3px);
-}
-
-.model-card.best { border-color: rgba(16,185,129,0.35); }
-.model-card.mid  { border-color: rgba(59,130,246,0.25); }
-.model-card.base { border-color: #1e2d3d; }
-
-/* ---- Pipeline Steps ---- */
-.pipeline-step {
+/* ---- PIPELINE ---- */
+.pstep {
     background: #0d1117;
     border: 1px solid #1e2d3d;
     border-radius: 12px;
-    padding: 16px;
+    padding: 16px 12px;
     text-align: center;
-    position: relative;
     transition: border-color 0.2s, transform 0.2s;
 }
+.pstep:hover { border-color: rgba(59,130,246,0.35); transform: translateY(-2px); }
 
-.pipeline-step:hover {
-    border-color: rgba(59,130,246,0.3);
-    transform: translateY(-2px);
-}
-
-.step-num {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #3b82f6;
-    line-height: 1;
-}
-
-.step-name {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #f0f6fc;
-    margin-top: 6px;
-}
-
-.step-desc {
-    font-size: 0.72rem;
-    color: #6e7681;
-    margin-top: 3px;
-}
-
-/* ---- Category Pills ---- */
-.cat-pill {
-    display: inline-block;
-    background: rgba(139,92,246,0.08);
-    border: 1px solid rgba(139,92,246,0.2);
-    color: #a78bfa;
-    padding: 5px 14px;
-    border-radius: 100px;
-    font-size: 0.76rem;
-    font-weight: 500;
-    margin: 3px;
-    transition: background 0.2s;
-}
-
-.cat-pill:hover { background: rgba(139,92,246,0.15); }
-
-/* ---- Footer ---- */
-.site-footer {
+/* ---- FOOTER ---- */
+.foot {
     background: #0d1117;
     border: 1px solid #1e2d3d;
     border-radius: 16px;
-    padding: 32px 40px;
+    padding: 28px 36px;
     margin-top: 48px;
     display: flex;
     justify-content: space-between;
@@ -370,115 +410,49 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     gap: 20px;
 }
 
-.footer-brand {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #f0f6fc;
-}
-
-.footer-tagline {
-    font-size: 0.8rem;
-    color: #6e7681;
-    margin-top: 4px;
-    line-height: 1.5;
-}
-
-.footer-contact {
-    text-align: right;
-}
-
-.footer-name {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #f0f6fc;
-}
-
-.footer-details {
-    font-size: 0.8rem;
-    color: #6e7681;
-    margin-top: 6px;
-    line-height: 1.7;
-}
-
-.footer-link { color: #3b82f6; text-decoration: none; }
-.footer-link:hover { color: #60a5fa; }
-
-/* ---- Tech Badge ---- */
-.tech-badge {
+/* ---- TECH BADGE ---- */
+.tbadge {
     display: inline-block;
     background: rgba(255,255,255,0.04);
     border: 1px solid #1e2d3d;
-    border-radius: 8px;
-    padding: 6px 14px;
+    border-radius: 7px;
+    padding: 5px 12px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #8b949e;
-    margin: 4px;
-    transition: border-color 0.2s;
+    margin: 3px;
+    transition: all 0.2s;
+}
+.tbadge:hover { border-color: #3b82f6; color: #60a5fa; }
+
+/* ---- CAT PILL ---- */
+.cpill {
+    display: inline-block;
+    background: rgba(139,92,246,0.08);
+    border: 1px solid rgba(139,92,246,0.2);
+    color: #a78bfa;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    margin: 3px;
 }
 
-.tech-badge:hover { border-color: #3b82f6; color: #60a5fa; }
-
-/* ---- Animations ---- */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulseGreen {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
-    50%       { box-shadow: 0 0 20px 2px rgba(16,185,129,0.1); }
-}
-
-@keyframes pulseRed {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
-    50%       { box-shadow: 0 0 20px 2px rgba(239,68,68,0.1); }
-}
-
-@keyframes scanLine {
-    0%   { top: 0; }
-    100% { top: 100%; }
-}
-
-.animate-in { animation: fadeInUp 0.5s ease both; }
-
-/* ---- Streamlit overrides ---- */
-h1, h2, h3, h4, h5, h6 { color: #f0f6fc !important; }
+/* ---- STREAMLIT OVERRIDES ---- */
+h1,h2,h3,h4,h5,h6 { color: #f0f6fc !important; }
 p, li { color: #8b949e; }
 .stProgress > div > div { background: linear-gradient(90deg, #3b82f6, #818cf8) !important; }
 [data-testid="stFileUploader"] {
-    background: #0d1117;
-    border: 2px dashed #1e2d3d;
-    border-radius: 12px;
+    background: #0d1117 !important;
+    border: 2px dashed #1e2d3d !important;
+    border-radius: 12px !important;
 }
 .stSelectbox > div > div {
     background: #0d1117 !important;
     border: 1px solid #1e2d3d !important;
     color: #f0f6fc !important;
 }
-div[data-testid="stButton"] button {
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    font-family: 'Space Grotesk', sans-serif;
-    padding: 12px 24px;
-    font-size: 0.95rem;
-    transition: opacity 0.2s, transform 0.2s;
-    width: 100%;
-}
-div[data-testid="stButton"] button:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-div[data-testid="stButton"] button:disabled {
-    background: #1e2d3d;
-    color: #484f58;
-}
 .stDataFrame { border: 1px solid #1e2d3d; border-radius: 12px; }
+.stSuccess { background: rgba(16,185,129,0.1) !important; border: 1px solid rgba(16,185,129,0.3) !important; border-radius: 10px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -486,8 +460,8 @@ div[data-testid="stButton"] button:disabled {
 # ============================================================
 # CONSTANTS
 # ============================================================
-HF_BASE    = "https://huggingface.co/abdullah130704/mvtec-anomaly-model/resolve/main"
-MODEL_URL  = f"{HF_BASE}/best_model_weights.pth"
+HF_BASE     = "https://huggingface.co/abdullah130704/mvtec-anomaly-model/resolve/main"
+MODEL_URL   = f"{HF_BASE}/best_model_weights.pth"
 SAMPLE_BASE = f"{HF_BASE}/sample_images"
 
 CATEGORIES = [
@@ -496,9 +470,9 @@ CATEGORIES = [
     'tile','toothbrush','transistor','wood','zipper'
 ]
 
-IMG_SIZE       = 224
-IMAGENET_MEAN  = [0.485, 0.456, 0.406]
-IMAGENET_STD   = [0.229, 0.224, 0.225]
+IMG_SIZE      = 224
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD  = [0.229, 0.224, 0.225]
 
 SAMPLE_FILES = {
     'bottle':     ['normal_01.png','anomaly_01_broken_large.png','anomaly_02_broken_small.png'],
@@ -517,6 +491,43 @@ SAMPLE_FILES = {
     'wood':       ['normal_01.png','anomaly_01_color.png','anomaly_02_combined.png'],
     'zipper':     ['normal_01.png','anomaly_01_broken_teeth.png','anomaly_02_combined.png'],
 }
+
+PAGES = ["🏠 Live Demo", "📋 Project Info", "📊 Results", "🔬 Explainability", "👤 About"]
+
+
+# ============================================================
+# SESSION STATE
+# ============================================================
+if "page" not in st.session_state:
+    st.session_state.page = "🏠 Live Demo"
+if "selected_sample_img" not in st.session_state:
+    st.session_state.selected_sample_img = None
+if "selected_sample_name" not in st.session_state:
+    st.session_state.selected_sample_name = None
+
+
+# ============================================================
+# TOP NAV
+# ============================================================
+nav_cols = st.columns([1.2, 5, 0.5])
+with nav_cols[0]:
+    st.markdown("<div class='topnav-brand' style='padding:16px 0;'>🔍 AnomalyVision</div>",
+                unsafe_allow_html=True)
+
+with nav_cols[1]:
+    btn_cols = st.columns(len(PAGES))
+    for i, (col, pg) in enumerate(zip(btn_cols, PAGES)):
+        with col:
+            active = "active" if st.session_state.page == pg else ""
+            if st.button(pg.split(" ", 1)[1], key=f"nav_{i}",
+                         use_container_width=True):
+                st.session_state.page = pg
+                st.session_state.selected_sample_img = None
+                st.rerun()
+
+st.markdown("<hr style='border-color:#1e2d3d; margin:0 0 24px;'>", unsafe_allow_html=True)
+
+page = st.session_state.page
 
 
 # ============================================================
@@ -573,9 +584,9 @@ class GradCAM:
         out = self.model(tensor)
         self.model.zero_grad()
         out[0,cls].backward()
-        w = self.grads.mean(dim=[2,3], keepdim=True)
+        w   = self.grads.mean(dim=[2,3], keepdim=True)
         cam = torch.relu((w*self.acts).sum(1,keepdim=True)).squeeze().cpu().numpy()
-        mn, mx = cam.min(), cam.max()
+        mn,mx = cam.min(), cam.max()
         if mx-mn > 0: cam = (cam-mn)/(mx-mn)
         return cv2.resize(cam, (IMG_SIZE,IMG_SIZE))
 
@@ -585,12 +596,16 @@ def gradcam_figure(pil_img, heatmap):
     h   = cv2.applyColorMap(np.uint8(255*heatmap), cv2.COLORMAP_JET)
     h   = cv2.cvtColor(h, cv2.COLOR_BGR2RGB).astype(np.float32)/255
     ov  = np.clip(0.45*h + 0.55*img, 0, 1)
-    fig, ax = plt.subplots(1,2,figsize=(10,4))
+    fig, axes = plt.subplots(1,2,figsize=(11,4.5))
     fig.patch.set_facecolor('#0d1117')
-    for a in ax: a.set_facecolor('#0d1117')
-    ax[0].imshow(img);  ax[0].set_title('Original Image',       color='#f0f6fc', fontsize=11, pad=10); ax[0].axis('off')
-    ax[1].imshow(ov);   ax[1].set_title('Grad-CAM — Model Focus', color='#f0f6fc', fontsize=11, pad=10); ax[1].axis('off')
-    plt.tight_layout(pad=2)
+    for a in axes: a.set_facecolor('#0d1117')
+    axes[0].imshow(img)
+    axes[0].set_title('Original Image', color='#c9d1d9', fontsize=12, pad=12, fontweight='600')
+    axes[0].axis('off')
+    axes[1].imshow(ov)
+    axes[1].set_title('Grad-CAM Heatmap — Model Focus Areas', color='#c9d1d9', fontsize=12, pad=12, fontweight='600')
+    axes[1].axis('off')
+    plt.tight_layout(pad=2.5)
     buf = io.BytesIO()
     plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='#0d1117')
     buf.seek(0); plt.close()
@@ -615,94 +630,34 @@ def run_prediction(model, pil_img):
 
 @st.cache_data(show_spinner=False)
 def fetch_sample(cat, fname):
-    url = f"{SAMPLE_BASE}/{cat}/{fname}"
-    r = requests.get(url)
+    r = requests.get(f"{SAMPLE_BASE}/{cat}/{fname}")
     if r.status_code == 200:
         return Image.open(io.BytesIO(r.content)).convert("RGB")
     return None
 
 
-# ============================================================
-# SHARED COMPONENTS
-# ============================================================
 def footer():
     st.markdown("""
-    <div class="site-footer">
+    <div class="foot">
         <div>
-            <div class="footer-brand">🔍 AnomalyVision</div>
-            <div class="footer-tagline">
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem;
+                        font-weight:700; color:#f0f6fc;">🔍 AnomalyVision</div>
+            <div style="font-size:0.78rem; color:#6e7681; margin-top:4px; line-height:1.6;">
                 Machine Learning & Smart Systems — Final Project<br>
-                University of Europe for Applied Sciences, Potsdam
+                University of Europe for Applied Sciences, Potsdam · SS26
             </div>
         </div>
-        <div class="footer-contact">
-            <div class="footer-name">Abdullah Rashid</div>
-            <div class="footer-details">
-                📧 <a href="mailto:abdullahrashid130704@outlook.com" class="footer-link">abdullahrashid130704@outlook.com</a><br>
+        <div style="text-align:right;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:0.95rem;
+                        font-weight:600; color:#f0f6fc;">Abdullah Rashid</div>
+            <div style="font-size:0.78rem; color:#6e7681; margin-top:5px; line-height:1.8;">
+                📧 <a href="mailto:abdullahrashid130704@outlook.com"
+                      style="color:#3b82f6; text-decoration:none;">abdullahrashid130704@outlook.com</a><br>
                 📞 +49 15 510 337 507<br>
-                🔗 <a href="https://linkedin.com/in/abdullahr2004" class="footer-link" target="_blank">linkedin.com/in/abdullahr2004</a>
+                🔗 <a href="https://linkedin.com/in/abdullahr2004" target="_blank"
+                      style="color:#3b82f6; text-decoration:none;">linkedin.com/in/abdullahr2004</a>
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-
-# ============================================================
-# SIDEBAR
-# ============================================================
-with st.sidebar:
-    st.markdown("""
-    <div style="padding:24px 0 16px; text-align:center;">
-        <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem; font-weight:800;
-                    background:linear-gradient(135deg,#3b82f6,#818cf8);
-                    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-                    background-clip:text;">
-            🔍 AnomalyVision
-        </div>
-        <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
-                    color:#484f58; margin-top:4px; letter-spacing:0.08em;">
-            INDUSTRIAL AI SYSTEM
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<hr style='border-color:#1e2d3d; margin:0 0 16px;'>", unsafe_allow_html=True)
-
-    page = st.radio("", [
-        "🏠  Live Demo",
-        "📋  Project Info",
-        "📊  Results",
-        "🔬  Explainability",
-        "👤  About"
-    ], label_visibility="collapsed")
-
-    st.markdown("<hr style='border-color:#1e2d3d; margin:16px 0;'>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
-                color:#484f58; letter-spacing:0.08em; margin-bottom:10px;">
-        MODEL STATUS
-    </div>
-    <div style="font-size:0.8rem; color:#8b949e; line-height:2;">
-        <span style="color:#10b981;">●</span> ConvNeXtTiny · Active<br>
-        <span style="color:#3b82f6;">◆</span> Accuracy · 90.66%<br>
-        <span style="color:#3b82f6;">◆</span> ROC-AUC · 0.9544<br>
-        <span style="color:#3b82f6;">◆</span> Categories · 15<br>
-        <span style="color:#3b82f6;">◆</span> Inference · 4.4ms
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<hr style='border-color:#1e2d3d; margin:16px 0;'>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
-                color:#484f58; letter-spacing:0.08em; margin-bottom:10px;">
-        TECH STACK
-    </div>
-    <div style="font-size:0.76rem; color:#6e7681; line-height:1.9;">
-        PyTorch · ConvNeXt<br>
-        Grad-CAM · SHAP<br>
-        Streamlit · Python
     </div>
     """, unsafe_allow_html=True)
 
@@ -710,22 +665,22 @@ with st.sidebar:
 # ============================================================
 # PAGE 1 — LIVE DEMO
 # ============================================================
-if page == "🏠  Live Demo":
+if page == "🏠 Live Demo":
 
     st.markdown("""
-    <div class="hero-wrap">
-        <div class="hero-badge">● LIVE INFERENCE ENGINE ACTIVE</div>
+    <div class="hero">
+        <div class="badge">● LIVE INFERENCE ENGINE ACTIVE</div>
         <div class="display-title">Detect Defects<br>in Milliseconds</div>
-        <p class="display-sub" style="margin-top:16px;">
-            Upload any industrial product image and get an instant AI-powered quality assessment.
-            Powered by ConvNeXtTiny trained on 15 product categories.
+        <p class="display-sub" style="margin-top:14px;">
+            Upload any industrial product image and get an instant AI-powered
+            quality assessment with visual explanations.
         </p>
-        <div class="stat-row">
-            <div class="stat-pill"><div class="stat-value">90.66%</div><div class="stat-label">Accuracy</div></div>
-            <div class="stat-pill"><div class="stat-value">0.9544</div><div class="stat-label">ROC-AUC</div></div>
-            <div class="stat-pill"><div class="stat-value">4.4ms</div><div class="stat-label">Inference</div></div>
-            <div class="stat-pill"><div class="stat-value">15</div><div class="stat-label">Categories</div></div>
-            <div class="stat-pill"><div class="stat-value">5K+</div><div class="stat-label">Images Trained</div></div>
+        <div class="stats-row">
+            <div class="stat-box"><div class="stat-v">90.66%</div><div class="stat-l">Accuracy</div></div>
+            <div class="stat-box"><div class="stat-v">0.9544</div><div class="stat-l">ROC-AUC</div></div>
+            <div class="stat-box"><div class="stat-v">4.4ms</div><div class="stat-l">Inference</div></div>
+            <div class="stat-box"><div class="stat-v">15</div><div class="stat-l">Categories</div></div>
+            <div class="stat-box"><div class="stat-v">5K+</div><div class="stat-l">Images Trained</div></div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -735,174 +690,213 @@ if page == "🏠  Live Demo":
         st.error("Model could not be loaded. Please refresh the page.")
         st.stop()
 
-    # Upload section
+    # ---- Upload section ----
     up_col, prev_col = st.columns([1,1], gap="large")
 
     with up_col:
-        st.markdown("<div class='card-label'>UPLOAD YOUR IMAGE</div>", unsafe_allow_html=True)
+        st.markdown("<div class='clabel'>UPLOAD YOUR OWN IMAGE</div>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
             "Drop image here",
             type=["jpg","jpeg","png","bmp"],
             label_visibility="collapsed"
         )
+        if uploaded_file:
+            # Clear any selected sample when user uploads
+            st.session_state.selected_sample_img = None
+            st.session_state.selected_sample_name = None
+
         st.markdown("""
-        <div class="info-pill" style="margin-top:14px;">
+        <div class="infobox" style="margin-top:12px;">
             <strong style="color:#3b82f6;">Works with any industrial product.</strong>
-            The model covers bottles, cables, capsules, carpet, grid, hazelnut,
-            leather, metal nuts, pills, screws, tiles, toothbrushes, transistors,
-            wood, and zippers. Upload any image to get started.
+            Covers bottles, cables, capsules, carpet, grid, hazelnut, leather,
+            metal nuts, pills, screws, tiles, toothbrushes, transistors, wood, and zippers.
         </div>
         """, unsafe_allow_html=True)
 
     with prev_col:
-        st.markdown("<div class='card-label'>PREVIEW</div>", unsafe_allow_html=True)
+        st.markdown("<div class='clabel'>IMAGE PREVIEW</div>", unsafe_allow_html=True)
+        # Show uploaded file or selected sample
         if uploaded_file:
-            st.image(Image.open(uploaded_file), use_column_width=True)
+            display_img = Image.open(uploaded_file)
+            st.image(display_img, use_column_width=True)
+        elif st.session_state.selected_sample_img is not None:
+            st.image(st.session_state.selected_sample_img, use_column_width=True)
+            st.markdown(f"""
+            <div style="text-align:center; font-size:0.78rem; color:#60a5fa; margin-top:6px;">
+                ✓ {st.session_state.selected_sample_name}
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.markdown("""
             <div style="background:#0d1117; border:2px dashed #1e2d3d; border-radius:12px;
-                        padding:60px 20px; text-align:center; color:#484f58;">
+                        padding:60px 20px; text-align:center; color:#484f58; min-height:200px;
+                        display:flex; flex-direction:column; align-items:center; justify-content:center;">
                 <div style="font-size:2.5rem;">🖼️</div>
-                <div style="font-size:0.85rem; margin-top:10px;">Image preview will appear here</div>
+                <div style="font-size:0.82rem; margin-top:10px;">
+                    Upload an image or select a sample below
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
-    # Sample images
+    # ---- Sample images ----
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div class='card-label'>OR TRY A SAMPLE IMAGE</div>", unsafe_allow_html=True)
+    st.markdown("<div class='clabel'>OR TRY A SAMPLE IMAGE</div>", unsafe_allow_html=True)
 
-    sample_cat = st.selectbox(
-        "Choose a product category to browse samples",
+    sample_cat_display = st.selectbox(
+        "Choose category",
         [c.replace('_',' ').title() for c in CATEGORIES],
         label_visibility="collapsed",
-        key="demo_cat"
+        key="sample_cat_select"
     )
-    cat_key = sample_cat.lower().replace(' ','_')
+    cat_key = sample_cat_display.lower().replace(' ','_')
     files   = SAMPLE_FILES.get(cat_key, ['normal_01.png', None, None])
     labels  = ['✅ Normal', '⚠️ Anomaly Type 1', '⚠️ Anomaly Type 2']
     colors  = ['#10b981', '#ef4444', '#ef4444']
 
-    s_cols = st.columns(3)
-    selected_sample = None
-    selected_sample_label = None
-
-    for i,(fn,lbl,col) in enumerate(zip(files, labels, colors)):
+    s_cols = st.columns(3, gap="medium")
+    for i, (fn, lbl, clr) in enumerate(zip(files, labels, colors)):
         with s_cols[i]:
             if fn:
                 img = fetch_sample(cat_key, fn)
                 if img:
                     st.image(img, use_column_width=True)
-                    st.markdown(f"<div style='text-align:center; color:{col}; font-size:0.78rem; font-weight:600; margin:4px 0 8px;'>{lbl}</div>", unsafe_allow_html=True)
-                    if st.button(f"Use this", key=f"s{i}"):
-                        selected_sample = img
-                        selected_sample_label = lbl
+                    st.markdown(f"""
+                    <div style="text-align:center; color:{clr}; font-size:0.75rem;
+                                font-weight:600; margin:5px 0 6px;">{lbl}</div>
+                    """, unsafe_allow_html=True)
+                    if st.button(f"Use this image", key=f"use_sample_{i}_{cat_key}"):
+                        st.session_state.selected_sample_img  = img
+                        st.session_state.selected_sample_name = f"{sample_cat_display} — {lbl}"
+                        st.rerun()
             else:
                 st.markdown("""
                 <div style="background:#0d1117; border:1px dashed #1e2d3d; border-radius:10px;
-                            padding:40px 10px; text-align:center; color:#484f58; font-size:0.78rem;">
+                            padding:50px 10px; text-align:center; color:#484f58; font-size:0.76rem;">
                     Only 1 anomaly type for this category
                 </div>
                 """, unsafe_allow_html=True)
 
-    # Determine image to analyze
+    # ---- Determine image to analyze ----
     analyze_img   = None
-    analyze_label = None
-    if selected_sample is not None:
-        analyze_img   = selected_sample
-        analyze_label = f"{sample_cat} — {selected_sample_label}"
-        st.success(f"Sample loaded: {analyze_label}")
-    elif uploaded_file is not None:
+    analyze_label = "Unknown"
+
+    if uploaded_file is not None:
         analyze_img   = Image.open(uploaded_file).convert("RGB")
         analyze_label = uploaded_file.name
+    elif st.session_state.selected_sample_img is not None:
+        analyze_img   = st.session_state.selected_sample_img
+        analyze_label = st.session_state.selected_sample_name
 
-    # Analyze button
+    # ---- Analyze button ----
     st.markdown("<br>", unsafe_allow_html=True)
-    b1,b2,b3 = st.columns([1,1,1])
+    b1, b2, b3 = st.columns([1,1,1])
     with b2:
-        go = st.button("🔍  Analyze Image", disabled=(analyze_img is None), use_container_width=True)
+        go = st.button(
+            "🔍  Analyze Image",
+            disabled=(analyze_img is None),
+            use_container_width=True
+        )
 
-    # Results
+    # ---- Results ----
     if go and analyze_img:
         with st.spinner("Running AI analysis..."):
             pred, conf, p_norm, p_anom, cam_fig = run_prediction(model, analyze_img)
 
-        st.markdown("<hr style='border-color:#1e2d3d; margin:32px 0;'>", unsafe_allow_html=True)
+        st.markdown("<hr style='border-color:#1e2d3d; margin:32px 0 24px;'>", unsafe_allow_html=True)
         st.markdown(f"""
-        <div class="section-eyebrow">ANALYSIS COMPLETE</div>
-        <div class="section-title">Prediction Results</div>
-        <div class="section-body" style="margin-bottom:24px;">Image: {analyze_label} &nbsp;·&nbsp; Model: ConvNeXtTiny</div>
+        <div class="eyebrow">ANALYSIS COMPLETE</div>
+        <div class="sec-title" style="margin-bottom:4px;">Prediction Results</div>
+        <div style="color:#6e7681; font-size:0.82rem; margin-bottom:24px; font-family:'JetBrains Mono',monospace;">
+            {analyze_label} &nbsp;·&nbsp; Model: ConvNeXtTiny
+        </div>
         """, unsafe_allow_html=True)
 
-        r1, r2, r3 = st.columns(3)
+        r1, r2, r3 = st.columns([1.1, 1.2, 0.9], gap="large")
 
         with r1:
             if pred == 0:
                 st.markdown(f"""
-                <div class="result-pass">
-                    <div style="font-size:3rem; line-height:1;">✅</div>
-                    <div class="result-verdict" style="color:#10b981;">NORMAL</div>
-                    <div class="result-sub">No defect detected</div>
-                    <div style="margin-top:12px; font-family:'Space Grotesk',sans-serif;
-                                font-size:1.3rem; font-weight:700; color:#10b981;">
-                        {conf*100:.1f}% confident
-                    </div>
+                <div class="res-pass">
+                    <div class="res-icon">✅</div>
+                    <div class="res-verdict" style="color:#10b981;">NORMAL</div>
+                    <div class="res-sub">No defect detected in this image</div>
+                    <div class="res-conf" style="color:#10b981;">{conf*100:.1f}% confident</div>
                 </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown(f"""
-                <div class="result-fail">
-                    <div style="font-size:3rem; line-height:1;">⚠️</div>
-                    <div class="result-verdict" style="color:#ef4444;">ANOMALOUS</div>
-                    <div class="result-sub">Defect detected</div>
-                    <div style="margin-top:12px; font-family:'Space Grotesk',sans-serif;
-                                font-size:1.3rem; font-weight:700; color:#ef4444;">
-                        {conf*100:.1f}% confident
-                    </div>
+                <div class="res-fail">
+                    <div class="res-icon">⚠️</div>
+                    <div class="res-verdict" style="color:#ef4444;">ANOMALOUS</div>
+                    <div class="res-sub">Defect detected in this image</div>
+                    <div class="res-conf" style="color:#ef4444;">{conf*100:.1f}% confident</div>
                 </div>
                 """, unsafe_allow_html=True)
 
         with r2:
-            st.markdown("<div class='card-label'>CONFIDENCE BREAKDOWN</div>", unsafe_allow_html=True)
+            st.markdown("<div class='clabel'>CONFIDENCE BREAKDOWN</div>", unsafe_allow_html=True)
             st.markdown(f"""
-            <div style="margin-bottom:6px; display:flex; justify-content:space-between;">
-                <span style="color:#10b981; font-size:0.85rem; font-weight:600;">Normal</span>
-                <span style="color:#f0f6fc; font-size:0.85rem;">{p_norm*100:.1f}%</span>
+            <div class="conf-row" style="margin-top:8px;">
+                <span class="conf-label" style="color:#10b981;">✅ Normal</span>
+                <span class="conf-val">{p_norm*100:.1f}%</span>
             </div>
             """, unsafe_allow_html=True)
             st.progress(p_norm)
+
+            st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+
             st.markdown(f"""
-            <div style="margin:16px 0 6px; display:flex; justify-content:space-between;">
-                <span style="color:#ef4444; font-size:0.85rem; font-weight:600;">Anomalous</span>
-                <span style="color:#f0f6fc; font-size:0.85rem;">{p_anom*100:.1f}%</span>
+            <div class="conf-row">
+                <span class="conf-label" style="color:#ef4444;">⚠️ Anomalous</span>
+                <span class="conf-val">{p_anom*100:.1f}%</span>
             </div>
             """, unsafe_allow_html=True)
             st.progress(p_anom)
 
-        with r3:
-            st.markdown("<div class='card-label'>MODEL INFO</div>", unsafe_allow_html=True)
-            st.markdown("""
-            <div class="kpi-card" style="margin-bottom:10px;">
-                <div class="kpi-val" style="font-size:1rem;">ConvNeXtTiny</div>
-                <div class="kpi-lbl">Architecture</div>
-            </div>
-            <div class="kpi-card" style="margin-bottom:10px;">
-                <div class="kpi-val">90.66%</div>
-                <div class="kpi-lbl">Test Accuracy</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-val">0.9544</div>
-                <div class="kpi-lbl">ROC-AUC Score</div>
+            # Decision bar
+            st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+            dominant_color = "#10b981" if pred == 0 else "#ef4444"
+            dominant_label = "NORMAL" if pred == 0 else "ANOMALOUS"
+            st.markdown(f"""
+            <div style="background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
+                        border-radius:10px; padding:14px; text-align:center;">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
+                            color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">VERDICT</div>
+                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem;
+                            font-weight:800; color:{dominant_color};">
+                    {dominant_label}
+                </div>
+                <div style="font-size:0.78rem; color:#6e7681; margin-top:4px;">
+                    with {conf*100:.1f}% confidence
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
+        with r3:
+            st.markdown("<div class='clabel'>MODEL STATS</div>", unsafe_allow_html=True)
+            for val, lbl in [("ConvNeXtTiny","Architecture"),
+                              ("90.66%","Test Accuracy"),
+                              ("0.9544","ROC-AUC"),
+                              ("4.4ms","Inference Time"),
+                              ("15.7M","Parameters")]:
+                st.markdown(f"""
+                <div class="kpi" style="margin-bottom:8px; padding:12px 16px;">
+                    <div style="font-family:'Space Grotesk',sans-serif; font-size:0.95rem;
+                                font-weight:700; color:#3b82f6;">{val}</div>
+                    <div class="kpi-l">{lbl}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # GradCAM
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("<div class='card-label'>GRAD-CAM VISUAL EXPLANATION</div>", unsafe_allow_html=True)
+        st.markdown("<div class='clabel'>GRAD-CAM VISUAL EXPLANATION</div>", unsafe_allow_html=True)
         st.markdown("""
-        <div class="info-pill" style="margin-bottom:14px;">
-            <strong style="color:#3b82f6;">Grad-CAM</strong> reveals where the model looked.
-            🔴 <strong>Red/yellow</strong> regions had the highest influence on this prediction.
-            🔵 <strong>Blue</strong> regions had little to no influence.
-            This makes the AI decision transparent and trustworthy.
+        <div class="infobox" style="margin-bottom:16px;">
+            <strong style="color:#3b82f6;">How to read this:</strong>
+            The heatmap shows <em>where the model looked</em> when making its decision.
+            🔴 <strong>Red/yellow</strong> = high attention regions that influenced the prediction.
+            🔵 <strong>Blue</strong> = low attention regions that were mostly ignored.
+            For anomalous images, red should highlight the actual defect area.
         </div>
         """, unsafe_allow_html=True)
         st.image(cam_fig, use_column_width=True)
@@ -913,56 +907,50 @@ if page == "🏠  Live Demo":
 # ============================================================
 # PAGE 2 — PROJECT INFO
 # ============================================================
-elif page == "📋  Project Info":
+elif page == "📋 Project Info":
 
     st.markdown("""
-    <div class="hero-wrap">
-        <div class="hero-badge">RESEARCH PROJECT · SS26</div>
+    <div class="hero">
+        <div class="badge">RESEARCH PROJECT · SS26</div>
         <div class="display-title">Project Overview</div>
-        <p class="display-sub" style="margin-top:16px;">
+        <p class="display-sub" style="margin-top:14px;">
             Explainable Multi-Product Industrial Anomaly Classification
             using CNN Transfer Learning and Cross-Category Evaluation
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Problem statement
+    # Problem
     st.markdown("""
-    <div class="section-eyebrow">THE PROBLEM</div>
-    <div class="section-title">Why Automated Defect Detection?</div>
+    <div class="eyebrow">THE PROBLEM</div>
+    <div class="sec-title">Why Automated Defect Detection?</div>
+    <div class="sec-body" style="margin-bottom:24px;"></div>
     """, unsafe_allow_html=True)
 
     p1, p2 = st.columns(2, gap="large")
     with p1:
         st.markdown("""
-        <div class="glass-card">
+        <div class="gcard">
             <div style="font-size:2rem; margin-bottom:12px;">🏭</div>
             <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                        color:#f0f6fc; font-size:1rem; margin-bottom:10px;">
-                Manual Inspection is Broken
-            </div>
-            <div class="section-body">
-                In modern manufacturing lines, human inspectors must examine thousands
-                of products per hour. This is slow, expensive, inconsistent, and prone
-                to fatigue-related errors. A single missed defect can cause product
-                recalls, safety hazards, and massive financial losses.
+                        color:#f0f6fc; margin-bottom:10px;">Manual Inspection is Broken</div>
+            <div class="sec-body" style="font-size:0.84rem;">
+                In modern manufacturing lines, human inspectors examine thousands
+                of products per hour — slow, expensive, inconsistent, and prone to
+                fatigue errors. One missed defect can cause recalls and safety hazards.
             </div>
         </div>
         """, unsafe_allow_html=True)
-
     with p2:
         st.markdown("""
-        <div class="glass-card">
+        <div class="gcard">
             <div style="font-size:2rem; margin-bottom:12px;">🤖</div>
             <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                        color:#f0f6fc; font-size:1rem; margin-bottom:10px;">
-                AI as the Solution
-            </div>
-            <div class="section-body">
-                Deep learning models can inspect images in milliseconds with consistent
-                accuracy. This project builds and compares three CNN architectures to
-                find the best balance of accuracy, speed, and explainability for
-                real industrial deployment.
+                        color:#f0f6fc; margin-bottom:10px;">AI as the Solution</div>
+            <div class="sec-body" style="font-size:0.84rem;">
+                Deep learning inspects images in milliseconds with consistent accuracy.
+                This project builds, compares, and explains three CNN architectures
+                to find the best balance of accuracy, speed, and trustworthiness.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -970,152 +958,126 @@ elif page == "📋  Project Info":
     # Dataset
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">DATASET</div>
-    <div class="section-title">MVTec Anomaly Detection</div>
-    <div class="section-body" style="margin-bottom:24px;">
-        The MVTec AD dataset is the gold standard benchmark for industrial anomaly detection,
-        containing high-resolution images of 15 different industrial products and textures.
+    <div class="eyebrow">DATASET</div>
+    <div class="sec-title">MVTec Anomaly Detection</div>
+    <div class="sec-body" style="margin-bottom:20px;">
+        The gold standard benchmark for industrial anomaly detection, containing
+        high-resolution images of 15 industrial products and textures.
     </div>
     """, unsafe_allow_html=True)
 
-    d1, d2, d3, d4 = st.columns(4)
-    for col, val, lbl in zip(
-        [d1,d2,d3,d4],
-        ["5,354","15","73","2"],
-        ["Total Images","Categories","Defect Types","Classes"]
-    ):
+    dcols = st.columns(4)
+    for col, v, l in zip(dcols, ["5,354","15","73","2"],
+                         ["Total Images","Categories","Defect Types","Classes (Normal/Anomaly)"]):
         with col:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-val">{val}</div>
-                <div class="kpi-lbl">{lbl}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"""<div class="kpi"><div class="kpi-v">{v}</div><div class="kpi-l">{l}</div></div>""",
+                        unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="glass-card">
-        <div class="card-label">ALL 15 PRODUCT CATEGORIES</div>
-        <div style="margin-top:8px;">
-            <span class="cat-pill">Bottle</span>
-            <span class="cat-pill">Cable</span>
-            <span class="cat-pill">Capsule</span>
-            <span class="cat-pill">Carpet</span>
-            <span class="cat-pill">Grid</span>
-            <span class="cat-pill">Hazelnut</span>
-            <span class="cat-pill">Leather</span>
-            <span class="cat-pill">Metal Nut</span>
-            <span class="cat-pill">Pill</span>
-            <span class="cat-pill">Screw</span>
-            <span class="cat-pill">Tile</span>
-            <span class="cat-pill">Toothbrush</span>
-            <span class="cat-pill">Transistor</span>
-            <span class="cat-pill">Wood</span>
-            <span class="cat-pill">Zipper</span>
-        </div>
+    <div class="gcard">
+        <div class="clabel">ALL 15 PRODUCT CATEGORIES</div>
+        <span class="cpill">Bottle</span><span class="cpill">Cable</span>
+        <span class="cpill">Capsule</span><span class="cpill">Carpet</span>
+        <span class="cpill">Grid</span><span class="cpill">Hazelnut</span>
+        <span class="cpill">Leather</span><span class="cpill">Metal Nut</span>
+        <span class="cpill">Pill</span><span class="cpill">Screw</span>
+        <span class="cpill">Tile</span><span class="cpill">Toothbrush</span>
+        <span class="cpill">Transistor</span><span class="cpill">Wood</span>
+        <span class="cpill">Zipper</span>
     </div>
     """, unsafe_allow_html=True)
 
-    # Methodology pipeline
+    # Pipeline
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">METHODOLOGY</div>
-    <div class="section-title">Research Pipeline</div>
-    <div class="section-body" style="margin-bottom:24px;">
-        A systematic 6-stage pipeline from raw data to deployed explainable model.
+    <div class="eyebrow">METHODOLOGY</div>
+    <div class="sec-title">Research Pipeline</div>
+    <div class="sec-body" style="margin-bottom:20px;">
+        A systematic 6-stage pipeline from raw data to deployed, explainable AI model.
     </div>
     """, unsafe_allow_html=True)
 
+    pcols = st.columns(6)
     steps = [
-        ("1","Data Loading","15 categories, 5K+ images, binary labels"),
-        ("2","Preprocessing","Resize 224×224, normalize, augment"),
-        ("3","Model Training","3 CNNs with early stopping"),
-        ("4","Evaluation","F1, AUC, confusion matrix"),
-        ("5","Explainability","Grad-CAM + SHAP analysis"),
-        ("6","Deployment","Streamlit web application"),
+        ("1","Data Loading","15 categories\n5K+ images","#3b82f6"),
+        ("2","Preprocessing","Resize 224×224\nNormalize & Augment","#3b82f6"),
+        ("3","Training","3 CNN models\nEarly stopping","#3b82f6"),
+        ("4","Evaluation","F1, AUC\nConfusion Matrix","#3b82f6"),
+        ("5","Explainability","Grad-CAM\n+ SHAP","#3b82f6"),
+        ("6","Deployment","Streamlit\nWeb App","#10b981"),
     ]
-    cols = st.columns(6)
-    for col, (num, name, desc) in zip(cols, steps):
+    for col, (num, name, desc, clr) in zip(pcols, steps):
         with col:
-            color = "#10b981" if num == "6" else "#3b82f6"
             st.markdown(f"""
-            <div class="pipeline-step">
-                <div class="step-num" style="color:{color};">{num}</div>
-                <div class="step-name">{name}</div>
-                <div class="step-desc">{desc}</div>
+            <div class="pstep">
+                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
+                            font-weight:800; color:{clr};">{num}</div>
+                <div style="font-size:0.8rem; font-weight:600; color:#f0f6fc; margin-top:6px;">{name}</div>
+                <div style="font-size:0.7rem; color:#6e7681; margin-top:4px; white-space:pre-line;">{desc}</div>
             </div>
             """, unsafe_allow_html=True)
 
     # Models
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">MODELS</div>
-    <div class="section-title">Three Architectures Compared</div>
-    <div class="section-body" style="margin-bottom:24px;">
-        From a simple custom baseline to state-of-the-art transfer learning models.
-    </div>
+    <div class="eyebrow">MODELS</div>
+    <div class="sec-title">Three Architectures Compared</div>
+    <div class="sec-body" style="margin-bottom:20px;">From a simple custom baseline to state-of-the-art transfer learning.</div>
     """, unsafe_allow_html=True)
 
     m1, m2, m3 = st.columns(3, gap="large")
     with m1:
         st.markdown("""
-        <div class="model-card base">
-            <div style="font-size:2.2rem;">🏗️</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-size:1.05rem;
-                        font-weight:700; color:#f0f6fc; margin:10px 0 4px;">Custom CNN</div>
-            <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
-                        color:#484f58; letter-spacing:0.1em; margin-bottom:12px;">BASELINE</div>
-            <div class="section-body" style="font-size:0.83rem;">
-                4 convolutional blocks built from scratch.
-                No pretrained weights. Serves as our
-                performance lower bound.
+        <div class="mcard">
+            <div style="font-size:2rem;">🏗️</div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700;
+                        color:#f0f6fc; margin:10px 0 4px;">Custom CNN</div>
+            <div class="eyebrow" style="color:#484f58;">BASELINE</div>
+            <div class="sec-body" style="font-size:0.82rem; margin-top:8px;">
+                4 convolutional blocks built from scratch. No pretrained weights.
+                Serves as our performance lower bound.
             </div>
-            <div style="margin-top:16px; padding-top:16px; border-top:1px solid #1e2d3d;">
-                <div style="color:#6e7681; font-size:0.75rem;">422,530 params · 1.63 MB</div>
-                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem;
-                            font-weight:700; color:#f0f6fc; margin-top:4px;">63.77%</div>
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e2d3d;">
+                <div style="color:#6e7681; font-size:0.72rem;">422,530 params · 1.63 MB</div>
+                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
+                            font-weight:800; color:#8b949e; margin-top:4px;">63.77%</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-
     with m2:
         st.markdown("""
-        <div class="model-card mid">
-            <div style="font-size:2.2rem;">⚡</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-size:1.05rem;
-                        font-weight:700; color:#f0f6fc; margin:10px 0 4px;">EfficientNetV2S</div>
-            <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
-                        color:#3b82f6; letter-spacing:0.1em; margin-bottom:12px;">TRANSFER LEARNING</div>
-            <div class="section-body" style="font-size:0.83rem;">
-                Pretrained on ImageNet. Two-stage training:
-                frozen backbone then partial fine-tuning
-                of last 2 blocks.
+        <div class="mcard mid">
+            <div style="font-size:2rem;">⚡</div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700;
+                        color:#f0f6fc; margin:10px 0 4px;">EfficientNetV2S</div>
+            <div class="eyebrow">TRANSFER LEARNING</div>
+            <div class="sec-body" style="font-size:0.82rem; margin-top:8px;">
+                Pretrained on ImageNet. Two-stage training: frozen backbone then
+                partial fine-tuning of last 2 blocks.
             </div>
-            <div style="margin-top:16px; padding-top:16px; border-top:1px solid #1e2d3d;">
-                <div style="color:#6e7681; font-size:0.75rem;">15.2M params · 79.10 MB</div>
-                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem;
-                            font-weight:700; color:#3b82f6; margin-top:4px;">86.93%</div>
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e2d3d;">
+                <div style="color:#6e7681; font-size:0.72rem;">15.2M params · 79.1 MB</div>
+                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
+                            font-weight:800; color:#3b82f6; margin-top:4px;">86.93%</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
-
     with m3:
         st.markdown("""
-        <div class="model-card best">
-            <div style="font-size:2.2rem;">🏆</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-size:1.05rem;
-                        font-weight:700; color:#f0f6fc; margin:10px 0 4px;">ConvNeXtTiny</div>
-            <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
-                        color:#10b981; letter-spacing:0.1em; margin-bottom:12px;">BEST MODEL ★</div>
-            <div class="section-body" style="font-size:0.83rem;">
-                Modern ConvNet architecture pretrained on
-                ImageNet. Outperformed all models across
-                every evaluation metric.
+        <div class="mcard best">
+            <div style="font-size:2rem;">🏆</div>
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700;
+                        color:#f0f6fc; margin:10px 0 4px;">ConvNeXtTiny</div>
+            <div class="eyebrow" style="color:#10b981;">BEST MODEL ★</div>
+            <div class="sec-body" style="font-size:0.82rem; margin-top:8px;">
+                Modern ConvNet architecture pretrained on ImageNet.
+                Outperformed all models across every evaluation metric.
             </div>
-            <div style="margin-top:16px; padding-top:16px; border-top:1px solid #1e2d3d;">
-                <div style="color:#6e7681; font-size:0.75rem;">15.7M params · 106.95 MB</div>
-                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.2rem;
-                            font-weight:700; color:#10b981; margin-top:4px;">90.66%</div>
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e2d3d;">
+                <div style="color:#6e7681; font-size:0.72rem;">15.7M params · 106.95 MB</div>
+                <div style="font-family:'Space Grotesk',sans-serif; font-size:1.3rem;
+                            font-weight:800; color:#10b981; margin-top:4px;">90.66%</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1123,25 +1085,16 @@ elif page == "📋  Project Info":
     # Tech stack
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">TECHNOLOGY</div>
-    <div class="section-title">Tech Stack</div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div class="glass-card">
-        <span class="tech-badge">Python 3.10</span>
-        <span class="tech-badge">PyTorch</span>
-        <span class="tech-badge">Torchvision</span>
-        <span class="tech-badge">ConvNeXtTiny</span>
-        <span class="tech-badge">EfficientNetV2S</span>
-        <span class="tech-badge">Grad-CAM</span>
-        <span class="tech-badge">SHAP</span>
-        <span class="tech-badge">OpenCV</span>
-        <span class="tech-badge">Scikit-learn</span>
-        <span class="tech-badge">Matplotlib</span>
-        <span class="tech-badge">Seaborn</span>
-        <span class="tech-badge">Streamlit</span>
-        <span class="tech-badge">Kaggle GPU T4×2</span>
-        <span class="tech-badge">Hugging Face</span>
+    <div class="eyebrow">TECHNOLOGY</div>
+    <div class="sec-title">Tech Stack</div>
+    <div class="gcard" style="margin-top:12px;">
+        <span class="tbadge">Python 3.10</span><span class="tbadge">PyTorch</span>
+        <span class="tbadge">Torchvision</span><span class="tbadge">ConvNeXtTiny</span>
+        <span class="tbadge">EfficientNetV2S</span><span class="tbadge">Grad-CAM</span>
+        <span class="tbadge">SHAP</span><span class="tbadge">OpenCV</span>
+        <span class="tbadge">Scikit-learn</span><span class="tbadge">Matplotlib</span>
+        <span class="tbadge">Seaborn</span><span class="tbadge">Streamlit</span>
+        <span class="tbadge">Kaggle GPU T4×2</span><span class="tbadge">Hugging Face</span>
     </div>
     """, unsafe_allow_html=True)
 
@@ -1151,131 +1104,121 @@ elif page == "📋  Project Info":
 # ============================================================
 # PAGE 3 — RESULTS
 # ============================================================
-elif page == "📊  Results":
+elif page == "📊 Results":
 
     st.markdown("""
-    <div class="hero-wrap">
-        <div class="hero-badge">EXPERIMENTAL RESULTS</div>
+    <div class="hero">
+        <div class="badge">EXPERIMENTAL RESULTS</div>
         <div class="display-title">Model Performance</div>
-        <p class="display-sub" style="margin-top:16px;">
+        <p class="display-sub" style="margin-top:14px;">
             Complete evaluation of all 3 models on the held-out test set.
             ConvNeXtTiny achieved best results across every metric.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Top KPIs
-    k1,k2,k3,k4,k5 = st.columns(5)
-    for col, val, lbl in zip(
-        [k1,k2,k3,k4,k5],
+    # KPIs
+    kcols = st.columns(5)
+    for col, v, l in zip(kcols,
         ["90.66%","0.9544","0.8706","0.8916","4.4ms"],
-        ["Best Accuracy","Best ROC-AUC","Best Macro F1","Best PR-AUC","Best Inference"]
-    ):
+        ["Best Accuracy","Best ROC-AUC","Best Macro F1","Best PR-AUC","Best Inference"]):
         with col:
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-val">{val}</div>
-                <div class="kpi-lbl">{lbl}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"""<div class="kpi"><div class="kpi-v">{v}</div><div class="kpi-l">{l}</div></div>""",
+                        unsafe_allow_html=True)
 
-    # Full table
+    # Table
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">COMPARISON TABLE</div>
-    <div class="section-title">Full Metrics Breakdown</div>
+    <div class="eyebrow">COMPARISON TABLE</div>
+    <div class="sec-title">Full Metrics Breakdown</div>
     """, unsafe_allow_html=True)
 
     df = pd.DataFrame({
         "Model":           ["Custom CNN","EfficientNetV2S","ConvNeXtTiny ⭐"],
-        "Accuracy":        [0.6377, 0.8693, 0.9066],
-        "Macro Precision": [0.5409, 0.8318, 0.8697],
-        "Macro Recall":    [0.5481, 0.7949, 0.8636],
-        "Macro F1":        [0.5499, 0.8142, 0.8706],
-        "Weighted F1":     [0.6531, 0.8674, 0.9044],
-        "ROC-AUC":         [0.5775, 0.9025, 0.9544],
-        "PR-AUC":          [0.2821, 0.8159, 0.8916],
-        "Inference (ms)":  [0.790,  3.154,  4.401 ],
-        "Params (M)":      [0.42,   15.22,  15.67 ],
-        "Size (MB)":       [1.63,   79.10,  106.95],
+        "Accuracy":        [0.6377,0.8693,0.9066],
+        "Macro Precision": [0.5409,0.8318,0.8697],
+        "Macro Recall":    [0.5481,0.7949,0.8636],
+        "Macro F1":        [0.5499,0.8142,0.8706],
+        "Weighted F1":     [0.6531,0.8674,0.9044],
+        "ROC-AUC":         [0.5775,0.9025,0.9544],
+        "PR-AUC":          [0.2821,0.8159,0.8916],
+        "Inference (ms)":  [0.790,3.154,4.401],
+        "Params (M)":      [0.42,15.22,15.67],
+        "Size (MB)":       [1.63,79.10,106.95],
     })
     st.dataframe(df, use_container_width=True, hide_index=True)
 
-    # Per category
+    # Category bar chart
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">CATEGORY ANALYSIS</div>
-    <div class="section-title">Per-Category Performance</div>
-    <div class="section-body" style="margin-bottom:24px;">
-        ConvNeXtTiny's accuracy broken down by each of the 15 product categories.
+    <div class="eyebrow">CATEGORY ANALYSIS</div>
+    <div class="sec-title">Per-Category Accuracy — ConvNeXtTiny</div>
+    <div class="sec-body" style="margin-bottom:20px;">
+        🟢 Green = above 90% &nbsp;|&nbsp; 🔵 Blue = 80–90% &nbsp;|&nbsp; 🔴 Red = below 80%
     </div>
     """, unsafe_allow_html=True)
 
-    cat_data = {
-        "Category":  ["Bottle","Cable","Capsule","Carpet","Grid","Hazelnut",
-                      "Leather","Metal Nut","Pill","Screw","Tile","Toothbrush",
-                      "Transistor","Wood","Zipper"],
-        "Accuracy":  [0.95, 0.88, 0.91, 1.00, 0.93, 0.96,
-                      0.98, 0.89, 0.90, 0.82, 0.94, 0.70,
-                      0.87, 0.92, 0.95],
-    }
-    cat_df = pd.DataFrame(cat_data).sort_values("Accuracy", ascending=False)
+    cat_data = pd.DataFrame({
+        "Category": ["Carpet","Leather","Bottle","Hazelnut","Tile","Zipper",
+                     "Grid","Wood","Pill","Capsule","Metal Nut","Cable",
+                     "Transistor","Screw","Toothbrush"],
+        "Accuracy": [1.00,0.98,0.95,0.96,0.94,0.95,
+                     0.93,0.92,0.90,0.91,0.89,0.88,
+                     0.87,0.82,0.70],
+    })
 
-    fig, ax = plt.subplots(figsize=(14, 4))
+    fig, ax = plt.subplots(figsize=(14, 4.5))
     fig.patch.set_facecolor('#0d1117')
     ax.set_facecolor('#0d1117')
-    colors_bar = ['#10b981' if v >= 0.90 else '#3b82f6' if v >= 0.80 else '#ef4444'
-                  for v in cat_df["Accuracy"]]
-    bars = ax.bar(cat_df["Category"], cat_df["Accuracy"], color=colors_bar,
-                  edgecolor='none', width=0.65)
-    ax.axhline(y=cat_df["Accuracy"].mean(), color='#f59e0b', linestyle='--',
-               linewidth=1.5, label=f'Mean = {cat_df["Accuracy"].mean():.2f}')
-    ax.set_ylim(0, 1.1)
-    ax.set_ylabel("Accuracy", color='#8b949e')
-    ax.tick_params(colors='#8b949e', axis='both')
-    ax.spines[['top','right','left','bottom']].set_color('#1e2d3d')
-    ax.set_facecolor('#0d1117')
-    for spine in ax.spines.values(): spine.set_color('#1e2d3d')
-    ax.tick_params(axis='x', rotation=35)
-    for bar, val in zip(bars, cat_df["Accuracy"]):
-        ax.text(bar.get_x()+bar.get_width()/2, val+0.01, f'{val:.0%}',
-                ha='center', fontsize=8, color='#8b949e')
-    ax.legend(facecolor='#0d1117', labelcolor='#f59e0b', edgecolor='#1e2d3d')
+    bar_colors = ['#10b981' if v >= 0.90 else '#3b82f6' if v >= 0.80 else '#ef4444'
+                  for v in cat_data["Accuracy"]]
+    bars = ax.bar(cat_data["Category"], cat_data["Accuracy"],
+                  color=bar_colors, edgecolor='none', width=0.6)
+    ax.axhline(y=cat_data["Accuracy"].mean(), color='#f59e0b', linestyle='--',
+               linewidth=1.5, label=f'Mean = {cat_data["Accuracy"].mean():.2f}', alpha=0.8)
+    ax.set_ylim(0, 1.12)
+    ax.tick_params(colors='#6e7681', axis='both', labelsize=9)
+    ax.tick_params(axis='x', rotation=30)
+    for sp in ax.spines.values(): sp.set_color('#1e2d3d')
+    ax.set_ylabel("Accuracy", color='#6e7681', fontsize=9)
+    for bar, val in zip(bars, cat_data["Accuracy"]):
+        ax.text(bar.get_x()+bar.get_width()/2, val+0.012,
+                f'{val:.0%}', ha='center', fontsize=8, color='#8b949e')
+    ax.legend(facecolor='#0d1117', labelcolor='#f59e0b', edgecolor='#1e2d3d', fontsize=9)
     plt.tight_layout()
     st.pyplot(fig)
     plt.close()
 
-    # Research questions
+    # RQs
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">RESEARCH QUESTIONS</div>
-    <div class="section-title">Key Findings</div>
+    <div class="eyebrow">KEY FINDINGS</div>
+    <div class="sec-title">Research Questions Answered</div>
     """, unsafe_allow_html=True)
 
     rqs = [
         ("RQ1","Which architecture achieves strongest performance?",
-         "ConvNeXtTiny — 90.66% accuracy, 0.9544 ROC-AUC, best across all metrics.","#3b82f6"),
+         "ConvNeXtTiny — 90.66% accuracy, 0.9544 ROC-AUC, best across all metrics."),
         ("RQ2","How much does performance vary between categories?",
-         "Range of 30% — Carpet achieved 100%, Toothbrush was hardest at 70%.","#3b82f6"),
+         "30% range — Carpet achieved 100%, Toothbrush was hardest at 70%."),
         ("RQ3","Do Grad-CAM and SHAP overlap with anomalous regions?",
-         "Yes — correct predictions consistently focus on actual defect areas.","#3b82f6"),
+         "Yes — correct predictions consistently focus on the actual defect areas."),
         ("RQ4","Which categories produce highest false-negative rates?",
-         "Toothbrush and Screw — fine-grained defects are hardest to detect.","#3b82f6"),
+         "Toothbrush and Screw — fine-grained texture defects are hardest to detect."),
         ("RQ5","Can a compact model give a practical trade-off?",
-         "Custom CNN at 0.790ms/image is 5x faster but 27% less accurate.","#3b82f6"),
+         "Custom CNN at 0.790ms/image is 5.6× faster but 27% less accurate."),
     ]
-
-    for rq, q, a, c in rqs:
+    for rq, q, a in rqs:
         st.markdown(f"""
-        <div class="glass-card" style="margin-bottom:10px; padding:20px 24px;">
-            <div style="display:flex; gap:16px; align-items:flex-start;">
+        <div class="gcard" style="padding:18px 22px; margin-bottom:10px;">
+            <div style="display:flex; gap:14px; align-items:flex-start;">
                 <div style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.25);
-                            color:#3b82f6; padding:5px 12px; border-radius:8px;
-                            font-family:'JetBrains Mono',monospace; font-size:0.75rem;
-                            font-weight:600; white-space:nowrap;">{rq}</div>
+                            color:#3b82f6; padding:4px 12px; border-radius:8px;
+                            font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+                            font-weight:600; white-space:nowrap; align-self:flex-start;">{rq}</div>
                 <div>
-                    <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">{q}</div>
-                    <div style="color:#10b981; font-size:0.83rem; margin-top:6px;">→ {a}</div>
+                    <div style="color:#f0f6fc; font-size:0.86rem; font-weight:500;">{q}</div>
+                    <div style="color:#10b981; font-size:0.82rem; margin-top:5px;">→ {a}</div>
                 </div>
             </div>
         </div>
@@ -1287,109 +1230,88 @@ elif page == "📊  Results":
 # ============================================================
 # PAGE 4 — EXPLAINABILITY
 # ============================================================
-elif page == "🔬  Explainability":
+elif page == "🔬 Explainability":
 
     st.markdown("""
-    <div class="hero-wrap">
-        <div class="hero-badge">EXPLAINABLE AI · XAI</div>
-        <div class="display-title">Why Should You<br>Trust the Model?</div>
-        <p class="display-sub" style="margin-top:16px;">
-            A high accuracy alone is not enough. We use Grad-CAM and SHAP
-            to verify the model is looking at the right things.
+    <div class="hero">
+        <div class="badge">EXPLAINABLE AI · XAI</div>
+        <div class="display-title">Why Trust<br>the Model?</div>
+        <p class="display-sub" style="margin-top:14px;">
+            High accuracy alone is not enough. We use Grad-CAM and SHAP
+            to verify the model looks at the right parts of every image.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # GradCAM explanation
+    # Grad-CAM
     st.markdown("""
-    <div class="section-eyebrow">GRAD-CAM</div>
-    <div class="section-title">Gradient-weighted Class Activation Maps</div>
-    <div class="section-body" style="margin-bottom:24px;">
-        Grad-CAM uses the gradients flowing into the last convolutional layer to produce
-        a coarse localization map highlighting the important regions in the image for
-        predicting the concept. Red and yellow mean high importance, blue means low.
+    <div class="eyebrow">GRAD-CAM</div>
+    <div class="sec-title">Gradient-weighted Class Activation Maps</div>
+    <div class="sec-body" style="margin-bottom:20px;">
+        Grad-CAM uses gradients flowing into the last convolutional layer to produce
+        a heatmap highlighting which image regions drove the prediction.
+        Red = high influence, Blue = low influence.
     </div>
     """, unsafe_allow_html=True)
 
     g1, g2, g3 = st.columns(3)
-    with g1:
-        st.markdown("""
-        <div class="glass-card" style="text-align:center;">
-            <div style="font-size:2rem;">🎯</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                        color:#f0f6fc; margin:10px 0 8px;">Correct Prediction</div>
-            <div class="section-body" style="font-size:0.82rem;">
-                For correctly classified anomalous images, Grad-CAM highlights
-                the actual defect region — scratch, crack, or contamination area.
+    for col, icon, title, body in zip([g1,g2,g3],
+        ["🎯","❓","⚠️"],
+        ["Correct Predictions","Wrong Predictions","Limitations"],
+        [
+            "For correctly classified anomalous images, Grad-CAM highlights the actual defect region — scratch, crack, or contamination area.",
+            "For misclassified images, Grad-CAM often reveals the model was focused on background or irrelevant regions — exposing why it failed.",
+            "Grad-CAM produces coarse spatial maps and cannot pinpoint exact pixel-level regions. Use alongside SHAP for a complete picture."
+        ]):
+        with col:
+            st.markdown(f"""
+            <div class="gcard" style="text-align:center; padding:22px 18px;">
+                <div style="font-size:1.8rem; margin-bottom:10px;">{icon}</div>
+                <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
+                            color:#f0f6fc; font-size:0.9rem; margin-bottom:8px;">{title}</div>
+                <div class="sec-body" style="font-size:0.8rem;">{body}</div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with g2:
-        st.markdown("""
-        <div class="glass-card" style="text-align:center;">
-            <div style="font-size:2rem;">❓</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                        color:#f0f6fc; margin:10px 0 8px;">Wrong Prediction</div>
-            <div class="section-body" style="font-size:0.82rem;">
-                For misclassified images, Grad-CAM often reveals the model focused
-                on background or irrelevant regions — exposing why it failed.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with g3:
-        st.markdown("""
-        <div class="glass-card" style="text-align:center;">
-            <div style="font-size:2rem;">🔍</div>
-            <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                        color:#f0f6fc; margin:10px 0 8px;">Limitations</div>
-            <div class="section-body" style="font-size:0.82rem;">
-                Grad-CAM produces coarse maps and cannot pinpoint exact pixel-level
-                regions. It shows where the model looks, not why at a fine-grained level.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
-    # SHAP explanation
+    # SHAP
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">SHAP</div>
-    <div class="section-title">SHapley Additive exPlanations</div>
-    <div class="section-body" style="margin-bottom:24px;">
-        SHAP assigns each pixel a value showing how much it contributed to the prediction.
-        Red regions push the prediction toward Anomalous. Blue regions push toward Normal.
-        The magnitude shows how strongly each region influenced the final decision.
+    <div class="eyebrow">SHAP</div>
+    <div class="sec-title">SHapley Additive exPlanations</div>
+    <div class="sec-body" style="margin-bottom:20px;">
+        SHAP assigns each pixel a value showing how much it contributed to the final prediction.
+        Positive values (red) push toward Anomalous. Negative values (blue) push toward Normal.
     </div>
     """, unsafe_allow_html=True)
 
     s1, s2 = st.columns(2, gap="large")
     with s1:
         st.markdown("""
-        <div class="glass-card">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                <div style="width:16px; height:16px; background:#ef4444; border-radius:3px;"></div>
+        <div class="gcard">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                <div style="width:14px; height:14px; background:#ef4444; border-radius:3px; flex-shrink:0;"></div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                            color:#f0f6fc; font-size:0.95rem;">Red Regions — Support Anomalous</div>
+                            color:#f0f6fc; font-size:0.9rem;">Red — Supports Anomalous</div>
             </div>
-            <div class="section-body" style="font-size:0.83rem;">
-                Pixels highlighted in red are pushing the model to classify this image
-                as Anomalous. These typically correspond to the actual defect areas —
-                scratches, cracks, contamination, or structural damage.
+            <div class="sec-body" style="font-size:0.82rem;">
+                Red pixels push the model toward classifying the image as Anomalous.
+                These typically correspond to actual defect areas — scratches, cracks,
+                contamination, or structural damage visible in the product.
             </div>
         </div>
         """, unsafe_allow_html=True)
-
     with s2:
         st.markdown("""
-        <div class="glass-card">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-                <div style="width:16px; height:16px; background:#3b82f6; border-radius:3px;"></div>
+        <div class="gcard">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                <div style="width:14px; height:14px; background:#3b82f6; border-radius:3px; flex-shrink:0;"></div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                            color:#f0f6fc; font-size:0.95rem;">Blue Regions — Support Normal</div>
+                            color:#f0f6fc; font-size:0.9rem;">Blue — Supports Normal</div>
             </div>
-            <div class="section-body" style="font-size:0.83rem;">
-                Pixels highlighted in blue are working against the anomalous classification.
-                These are regions the model considers clean and defect-free, pulling
-                the prediction toward Normal.
+            <div class="sec-body" style="font-size:0.82rem;">
+                Blue pixels work against the anomalous classification — they represent
+                clean, defect-free regions the model recognizes as normal, pulling
+                the prediction back toward the Normal class.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1397,38 +1319,38 @@ elif page == "🔬  Explainability":
     # Why XAI matters
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">IMPORTANCE</div>
-    <div class="section-title">Why Explainability Matters</div>
+    <div class="eyebrow">IMPORTANCE</div>
+    <div class="sec-title">Why Explainability Matters</div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="glass-card">
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px;">
+    <div class="gcard">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px;">
             <div>
-                <div style="font-size:1.5rem; margin-bottom:8px;">🛡️</div>
+                <div style="font-size:1.4rem; margin-bottom:8px;">🛡️</div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                            color:#f0f6fc; font-size:0.9rem; margin-bottom:6px;">Trust</div>
-                <div class="section-body" style="font-size:0.8rem;">
+                            color:#f0f6fc; font-size:0.88rem; margin-bottom:6px;">Trust</div>
+                <div class="sec-body" style="font-size:0.8rem;">
                     Factory operators need to trust the system before replacing human inspectors.
-                    Visual explanations build that trust.
+                    Visual explanations build that trust by showing the reasoning.
                 </div>
             </div>
             <div>
-                <div style="font-size:1.5rem; margin-bottom:8px;">🐛</div>
+                <div style="font-size:1.4rem; margin-bottom:8px;">🐛</div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                            color:#f0f6fc; font-size:0.9rem; margin-bottom:6px;">Debugging</div>
-                <div class="section-body" style="font-size:0.8rem;">
-                    When the model fails, explanations show if it was focusing on
+                            color:#f0f6fc; font-size:0.88rem; margin-bottom:6px;">Debugging</div>
+                <div class="sec-body" style="font-size:0.8rem;">
+                    When the model fails, explanations reveal if it focused on
                     background patterns instead of actual product features.
                 </div>
             </div>
             <div>
-                <div style="font-size:1.5rem; margin-bottom:8px;">📋</div>
+                <div style="font-size:1.4rem; margin-bottom:8px;">📋</div>
                 <div style="font-family:'Space Grotesk',sans-serif; font-weight:600;
-                            color:#f0f6fc; font-size:0.9rem; margin-bottom:6px;">Compliance</div>
-                <div class="section-body" style="font-size:0.8rem;">
-                    In regulated industries, AI decisions must be explainable.
-                    Grad-CAM and SHAP provide the required audit trail.
+                            color:#f0f6fc; font-size:0.88rem; margin-bottom:6px;">Compliance</div>
+                <div class="sec-body" style="font-size:0.8rem;">
+                    In regulated industries, AI decisions must be auditable.
+                    Grad-CAM and SHAP provide the required decision audit trail.
                 </div>
             </div>
         </div>
@@ -1436,12 +1358,11 @@ elif page == "🔬  Explainability":
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="info-pill" style="margin-top:16px;">
+    <div class="infobox" style="margin-top:16px; border-color:rgba(245,158,11,0.25); background:rgba(245,158,11,0.06);">
         <strong style="color:#f59e0b;">⚠️ Important caveat:</strong>
         Attractive heatmaps are not proof of correct reasoning. A model can produce
         visually plausible Grad-CAM maps while still failing on edge cases.
-        Explainability tools should be used alongside rigorous quantitative evaluation,
-        not as a substitute for it.
+        Always use explainability tools alongside rigorous quantitative evaluation.
     </div>
     """, unsafe_allow_html=True)
 
@@ -1451,15 +1372,15 @@ elif page == "🔬  Explainability":
 # ============================================================
 # PAGE 5 — ABOUT
 # ============================================================
-elif page == "👤  About":
+elif page == "👤 About":
 
     st.markdown("""
-    <div class="hero-wrap">
-        <div class="hero-badge">ABOUT THIS PROJECT</div>
+    <div class="hero">
+        <div class="badge">ABOUT</div>
         <div class="display-title">Abdullah Rashid</div>
-        <p class="display-sub" style="margin-top:16px;">
+        <p class="display-sub" style="margin-top:14px;">
             3rd Semester · Bachelor of Software Engineering<br>
-            University of Europe for Applied Sciences, Potsdam
+            University of Europe for Applied Sciences, Potsdam · SS26
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -1468,45 +1389,39 @@ elif page == "👤  About":
 
     with a1:
         st.markdown("""
-        <div class="section-eyebrow">CONTACT</div>
-        <div class="section-title">Get in Touch</div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class="glass-card">
-            <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="eyebrow">CONTACT</div>
+        <div class="sec-title">Get in Touch</div>
+        <div class="gcard" style="margin-top:12px;">
+            <div style="display:flex; flex-direction:column; gap:18px;">
                 <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:40px; height:40px; background:rgba(59,130,246,0.12);
-                                border:1px solid rgba(59,130,246,0.25); border-radius:10px;
-                                display:flex; align-items:center; justify-content:center;
-                                font-size:1.1rem;">📧</div>
+                    <div style="width:40px; height:40px; min-width:40px; background:rgba(59,130,246,0.1);
+                                border:1px solid rgba(59,130,246,0.2); border-radius:10px;
+                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">📧</div>
                     <div>
-                        <div style="font-size:0.72rem; color:#6e7681; margin-bottom:2px;">EMAIL</div>
+                        <div style="font-size:0.68rem; color:#6e7681; margin-bottom:3px; font-family:'JetBrains Mono',monospace; letter-spacing:0.08em;">EMAIL</div>
                         <a href="mailto:abdullahrashid130704@outlook.com"
-                           style="color:#3b82f6; text-decoration:none; font-size:0.88rem;">
+                           style="color:#3b82f6; text-decoration:none; font-size:0.86rem;">
                             abdullahrashid130704@outlook.com
                         </a>
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:40px; height:40px; background:rgba(59,130,246,0.12);
-                                border:1px solid rgba(59,130,246,0.25); border-radius:10px;
-                                display:flex; align-items:center; justify-content:center;
-                                font-size:1.1rem;">📞</div>
+                    <div style="width:40px; height:40px; min-width:40px; background:rgba(59,130,246,0.1);
+                                border:1px solid rgba(59,130,246,0.2); border-radius:10px;
+                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">📞</div>
                     <div>
-                        <div style="font-size:0.72rem; color:#6e7681; margin-bottom:2px;">PHONE</div>
-                        <div style="color:#f0f6fc; font-size:0.88rem;">+49 15 510 337 507</div>
+                        <div style="font-size:0.68rem; color:#6e7681; margin-bottom:3px; font-family:'JetBrains Mono',monospace; letter-spacing:0.08em;">PHONE</div>
+                        <div style="color:#f0f6fc; font-size:0.86rem;">+49 15 510 337 507</div>
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:40px; height:40px; background:rgba(59,130,246,0.12);
-                                border:1px solid rgba(59,130,246,0.25); border-radius:10px;
-                                display:flex; align-items:center; justify-content:center;
-                                font-size:1.1rem;">🔗</div>
+                    <div style="width:40px; height:40px; min-width:40px; background:rgba(59,130,246,0.1);
+                                border:1px solid rgba(59,130,246,0.2); border-radius:10px;
+                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">🔗</div>
                     <div>
-                        <div style="font-size:0.72rem; color:#6e7681; margin-bottom:2px;">LINKEDIN</div>
+                        <div style="font-size:0.68rem; color:#6e7681; margin-bottom:3px; font-family:'JetBrains Mono',monospace; letter-spacing:0.08em;">LINKEDIN</div>
                         <a href="https://linkedin.com/in/abdullahr2004" target="_blank"
-                           style="color:#3b82f6; text-decoration:none; font-size:0.88rem;">
+                           style="color:#3b82f6; text-decoration:none; font-size:0.86rem;">
                             linkedin.com/in/abdullahr2004
                         </a>
                     </div>
@@ -1517,102 +1432,66 @@ elif page == "👤  About":
 
     with a2:
         st.markdown("""
-        <div class="section-eyebrow">PROJECT LINKS</div>
-        <div class="section-title">Resources</div>
+        <div class="eyebrow">PROJECT LINKS</div>
+        <div class="sec-title">Resources</div>
+        <div class="gcard" style="margin-top:12px;">
+            <div style="display:flex; flex-direction:column; gap:10px;">
         """, unsafe_allow_html=True)
 
-        st.markdown("""
-        <div class="glass-card">
-            <div style="display:flex; flex-direction:column; gap:14px;">
-                <a href="https://github.com/abdullah1307-git/mvtec-anomaly-classification"
-                   target="_blank" style="text-decoration:none;">
-                    <div style="display:flex; align-items:center; gap:14px; padding:12px;
-                                background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
-                                border-radius:10px; transition:border-color 0.2s;">
-                        <div style="font-size:1.3rem;">💻</div>
-                        <div>
-                            <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">GitHub Repository</div>
-                            <div style="color:#6e7681; font-size:0.75rem; margin-top:2px;">Source code, notebook, figures</div>
-                        </div>
+        links = [
+            ("💻","GitHub Repository","Source code, notebook, all figures",
+             "https://github.com/abdullah1307-git/mvtec-anomaly-classification"),
+            ("📓","Kaggle Notebook","Full executed training notebook",
+             "https://www.kaggle.com/code/abdullah130704/notebook8b312b2661"),
+            ("📊","MVTec AD Dataset","15 categories · 5,354 images",
+             "https://www.kaggle.com/datasets/ipythonx/mvtec-ad"),
+            ("🤗","Hugging Face Model","ConvNeXtTiny weights · 112 MB",
+             "https://huggingface.co/abdullah130704/mvtec-anomaly-model"),
+        ]
+        for icon, title, sub, url in links:
+            st.markdown(f"""
+            <a href="{url}" target="_blank" style="text-decoration:none; display:block;">
+                <div style="display:flex; align-items:center; gap:14px; padding:12px 14px;
+                            background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
+                            border-radius:10px; transition:border-color 0.2s; margin-bottom:8px;">
+                    <div style="font-size:1.3rem;">{icon}</div>
+                    <div>
+                        <div style="color:#f0f6fc; font-size:0.86rem; font-weight:500;">{title}</div>
+                        <div style="color:#6e7681; font-size:0.74rem; margin-top:2px;">{sub}</div>
                     </div>
-                </a>
-                <a href="https://www.kaggle.com/code/abdullah130704/notebook8b312b2661"
-                   target="_blank" style="text-decoration:none;">
-                    <div style="display:flex; align-items:center; gap:14px; padding:12px;
-                                background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
-                                border-radius:10px;">
-                        <div style="font-size:1.3rem;">📓</div>
-                        <div>
-                            <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">Kaggle Notebook</div>
-                            <div style="color:#6e7681; font-size:0.75rem; margin-top:2px;">Full executed training notebook</div>
-                        </div>
-                    </div>
-                </a>
-                <a href="https://www.kaggle.com/datasets/ipythonx/mvtec-ad"
-                   target="_blank" style="text-decoration:none;">
-                    <div style="display:flex; align-items:center; gap:14px; padding:12px;
-                                background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
-                                border-radius:10px;">
-                        <div style="font-size:1.3rem;">📊</div>
-                        <div>
-                            <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">MVTec AD Dataset</div>
-                            <div style="color:#6e7681; font-size:0.75rem; margin-top:2px;">15 categories · 5000+ images</div>
-                        </div>
-                    </div>
-                </a>
-                <a href="https://huggingface.co/abdullah130704/mvtec-anomaly-model"
-                   target="_blank" style="text-decoration:none;">
-                    <div style="display:flex; align-items:center; gap:14px; padding:12px;
-                                background:rgba(255,255,255,0.03); border:1px solid #1e2d3d;
-                                border-radius:10px;">
-                        <div style="font-size:1.3rem;">🤗</div>
-                        <div>
-                            <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">Hugging Face Model</div>
-                            <div style="color:#6e7681; font-size:0.75rem; margin-top:2px;">ConvNeXtTiny weights · 112 MB</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+                    <div style="margin-left:auto; color:#484f58; font-size:0.8rem;">↗</div>
+                </div>
+            </a>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
     # Course info
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
-    <div class="section-eyebrow">ACADEMIC CONTEXT</div>
-    <div class="section-title">Course Information</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="glass-card">
+    <div class="eyebrow">ACADEMIC CONTEXT</div>
+    <div class="sec-title">Course Information</div>
+    <div class="gcard" style="margin-top:12px;">
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:20px;">
             <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
                             color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">COURSE</div>
-                <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">
-                    Machine Learning & Smart Systems
-                </div>
+                <div style="color:#f0f6fc; font-size:0.85rem; font-weight:500;">Machine Learning & Smart Systems</div>
             </div>
             <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
                             color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">UNIVERSITY</div>
-                <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">
-                    UE for Applied Sciences, Potsdam
-                </div>
+                <div style="color:#f0f6fc; font-size:0.85rem; font-weight:500;">UE for Applied Sciences, Potsdam</div>
             </div>
             <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
                             color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">SEMESTER</div>
-                <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">
-                    Summer Semester 2026 · 3rd Semester
-                </div>
+                <div style="color:#f0f6fc; font-size:0.85rem; font-weight:500;">Summer Semester 2026 · 3rd</div>
             </div>
             <div>
-                <div style="font-family:'JetBrains Mono',monospace; font-size:0.68rem;
+                <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
                             color:#484f58; letter-spacing:0.1em; margin-bottom:6px;">PROGRAMME</div>
-                <div style="color:#f0f6fc; font-size:0.88rem; font-weight:500;">
-                    Bachelor of Software Engineering
-                </div>
+                <div style="color:#f0f6fc; font-size:0.85rem; font-weight:500;">Bachelor of Software Engineering</div>
             </div>
         </div>
     </div>
