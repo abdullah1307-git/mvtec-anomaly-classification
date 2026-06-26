@@ -390,31 +390,56 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 /* ---- BUTTONS ---- */
 div[data-testid="stButton"] button {
-    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%) !important;
-    color: white !important;
-    border: none !important;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(99,102,241,0.5) !important;
     border-radius: 10px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     font-family: 'Space Grotesk', sans-serif !important;
-    font-size: 0.9rem !important;
-    padding: 10px 20px !important;
-    transition: all 0.2s !important;
+    font-size: 0.92rem !important;
+    padding: 12px 22px !important;
+    transition: all 0.2s ease !important;
     width: 100% !important;
     letter-spacing: 0.02em !important;
-    box-shadow: 0 4px 15px rgba(59,130,246,0.3) !important;
+    box-shadow: 0 4px 20px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
 }
 
 div[data-testid="stButton"] button:hover {
-    opacity: 0.9 !important;
+    background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(59,130,246,0.4) !important;
+    box-shadow: 0 8px 28px rgba(37,99,235,0.55), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+}
+
+div[data-testid="stButton"] button:active {
+    transform: translateY(0px) !important;
 }
 
 div[data-testid="stButton"] button:disabled {
     background: #1e2d3d !important;
-    color: #484f58 !important;
+    color: #6e7681 !important;
+    border-color: #1e2d3d !important;
     box-shadow: none !important;
     transform: none !important;
+    text-shadow: none !important;
+}
+
+/* Nav buttons - different style */
+div[data-testid="stButton"]:not(:last-child) button {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: #8b949e !important;
+    box-shadow: none !important;
+    font-weight: 500 !important;
+    text-shadow: none !important;
+}
+
+div[data-testid="stButton"]:not(:last-child) button:hover {
+    background: rgba(255,255,255,0.06) !important;
+    color: #f0f6fc !important;
+    border-color: #1e2d3d !important;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
 /* ---- INFO BOX ---- */
@@ -691,37 +716,67 @@ def fetch_sample(cat, fname):
     return None
 
 
-def make_gauge(value, label, color):
-    """Create a circular gauge chart using Plotly."""
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=value * 100,
-        number={'suffix': '%', 'font': {'size': 28, 'color': color,
-                'family': 'Space Grotesk'}},
-        gauge={
-            'axis': {'range': [0, 100], 'tickwidth': 0,
-                     'tickcolor': '#1e2d3d', 'tickfont': {'color': '#6e7681', 'size': 9}},
-            'bar': {'color': color, 'thickness': 0.25},
-            'bgcolor': '#0d1117',
-            'borderwidth': 0,
-            'steps': [
-                {'range': [0, 100], 'color': '#1e2d3d'},
-            ],
-            'threshold': {
-                'line': {'color': color, 'width': 3},
-                'thickness': 0.75,
-                'value': value * 100
-            }
-        },
-        title={'text': label, 'font': {'size': 11, 'color': '#8b949e',
-               'family': 'JetBrains Mono'}}
+def make_confidence_chart(p_norm, p_anom):
+    """Create a clean horizontal confidence bar chart."""
+    fig = go.Figure()
+
+    # Background track for normal
+    fig.add_trace(go.Bar(
+        x=[100], y=["NORMAL"],
+        orientation='h',
+        marker_color='#1e2d3d',
+        showlegend=False,
+        hoverinfo='skip',
     ))
+    # Filled bar for normal
+    fig.add_trace(go.Bar(
+        x=[p_norm * 100], y=["NORMAL"],
+        orientation='h',
+        marker_color='#10b981',
+        showlegend=False,
+        text=f"{p_norm*100:.1f}%",
+        textposition='inside',
+        insidetextanchor='middle',
+        textfont=dict(color='white', size=13, family='Space Grotesk'),
+        hovertemplate="Normal: %{x:.1f}%<extra></extra>",
+    ))
+
+    # Background track for anomalous
+    fig.add_trace(go.Bar(
+        x=[100], y=["ANOMALOUS"],
+        orientation='h',
+        marker_color='#1e2d3d',
+        showlegend=False,
+        hoverinfo='skip',
+    ))
+    # Filled bar for anomalous
+    fig.add_trace(go.Bar(
+        x=[p_anom * 100], y=["ANOMALOUS"],
+        orientation='h',
+        marker_color='#ef4444',
+        showlegend=False,
+        text=f"{p_anom*100:.1f}%",
+        textposition='inside',
+        insidetextanchor='middle',
+        textfont=dict(color='white', size=13, family='Space Grotesk'),
+        hovertemplate="Anomalous: %{x:.1f}%<extra></extra>",
+    ))
+
     fig.update_layout(
         paper_bgcolor='#0d1117',
         plot_bgcolor='#0d1117',
-        font={'color': '#f0f6fc'},
-        height=180,
-        margin=dict(t=40, b=10, l=20, r=20),
+        barmode='overlay',
+        height=160,
+        margin=dict(t=10, b=10, l=20, r=20),
+        xaxis=dict(
+            range=[0, 100],
+            showgrid=False, showticklabels=False, zeroline=False
+        ),
+        yaxis=dict(
+            showgrid=False, zeroline=False,
+            tickfont=dict(color='#8b949e', size=11,
+                         family='JetBrains Mono'),
+        ),
     )
     return fig
 
@@ -945,14 +1000,9 @@ if page == "🏠 Live Demo":
                 """, unsafe_allow_html=True)
 
         with r2:
-            st.markdown("<div class='clabel'>CONFIDENCE GAUGES</div>", unsafe_allow_html=True)
-            g_col1, g_col2 = st.columns(2)
-            with g_col1:
-                st.plotly_chart(make_gauge(p_norm, "NORMAL", "#10b981"),
-                                use_container_width=True, config={'displayModeBar': False})
-            with g_col2:
-                st.plotly_chart(make_gauge(p_anom, "ANOMALOUS", "#ef4444"),
-                                use_container_width=True, config={'displayModeBar': False})
+            st.markdown("<div class='clabel'>CONFIDENCE SCORES</div>", unsafe_allow_html=True)
+            st.plotly_chart(make_confidence_chart(p_norm, p_anom),
+                            use_container_width=True, config={'displayModeBar': False})
 
             dominant_color = "#10b981" if pred == 0 else "#ef4444"
             dominant_label = "NORMAL" if pred == 0 else "ANOMALOUS"
