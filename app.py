@@ -130,6 +130,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .badge {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     background: rgba(59,130,246,0.1);
     border: 1px solid rgba(59,130,246,0.25);
@@ -141,6 +142,8 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     letter-spacing: 0.1em;
     text-transform: uppercase;
     margin-bottom: 20px;
+    margin-left: auto;
+    margin-right: auto;
     font-family: 'JetBrains Mono', monospace;
     animation: fadeIn 0.5s ease both;
 }
@@ -388,58 +391,33 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 .sample-card:hover .sample-overlay { transform: translateY(0); }
 
-/* ---- BUTTONS ---- */
+/* ---- ALL BUTTONS BASE ---- */
 div[data-testid="stButton"] button {
     background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
     color: #ffffff !important;
-    border: 1px solid rgba(99,102,241,0.5) !important;
+    border: none !important;
     border-radius: 10px !important;
     font-weight: 700 !important;
     font-family: 'Space Grotesk', sans-serif !important;
-    font-size: 0.92rem !important;
-    padding: 12px 22px !important;
+    font-size: 0.9rem !important;
+    padding: 10px 20px !important;
     transition: all 0.2s ease !important;
     width: 100% !important;
     letter-spacing: 0.02em !important;
-    box-shadow: 0 4px 20px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.15) !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+    box-shadow: 0 0 0 1px rgba(99,102,241,0.4), 0 4px 16px rgba(37,99,235,0.35) !important;
 }
 
 div[data-testid="stButton"] button:hover {
     background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 28px rgba(37,99,235,0.55), inset 0 1px 0 rgba(255,255,255,0.2) !important;
-}
-
-div[data-testid="stButton"] button:active {
-    transform: translateY(0px) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 0 0 1px rgba(99,102,241,0.6), 0 8px 24px rgba(37,99,235,0.45) !important;
 }
 
 div[data-testid="stButton"] button:disabled {
-    background: #1e2d3d !important;
-    color: #6e7681 !important;
-    border-color: #1e2d3d !important;
-    box-shadow: none !important;
+    background: #161b22 !important;
+    color: #484f58 !important;
+    box-shadow: 0 0 0 1px #1e2d3d !important;
     transform: none !important;
-    text-shadow: none !important;
-}
-
-/* Nav buttons - different style */
-div[data-testid="stButton"]:not(:last-child) button {
-    background: transparent !important;
-    border: 1px solid transparent !important;
-    color: #8b949e !important;
-    box-shadow: none !important;
-    font-weight: 500 !important;
-    text-shadow: none !important;
-}
-
-div[data-testid="stButton"]:not(:last-child) button:hover {
-    background: rgba(255,255,255,0.06) !important;
-    color: #f0f6fc !important;
-    border-color: #1e2d3d !important;
-    transform: none !important;
-    box-shadow: none !important;
 }
 
 /* ---- INFO BOX ---- */
@@ -522,6 +500,78 @@ div[data-testid="stButton"]:not(:last-child) button:hover {
 
 /* ---- DIVIDER ---- */
 .divider { border: none; border-top: 1px solid #1e2d3d; margin: 32px 0; }
+
+/* ---- SKELETON LOADING ---- */
+.skeleton {
+    background: linear-gradient(90deg, #1e2d3d 25%, #2d4a6e 50%, #1e2d3d 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ---- STEP INDICATOR ---- */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.step-num-active {
+    width: 24px; height: 24px;
+    background: #3b82f6;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700; color: white;
+    flex-shrink: 0;
+}
+
+.step-num-done {
+    width: 24px; height: 24px;
+    background: #10b981;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700; color: white;
+    flex-shrink: 0;
+}
+
+.step-num-inactive {
+    width: 24px; height: 24px;
+    background: #1e2d3d;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700; color: #484f58;
+    flex-shrink: 0;
+}
+
+/* ---- HOW IT WORKS STEPS ---- */
+.how-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid #1e2d3d;
+}
+.how-step:last-child { border-bottom: none; }
+
+/* ---- RESULT SECTION ---- */
+.result-section {
+    background: #0d1117;
+    border: 1px solid #1e2d3d;
+    border-radius: 16px;
+    padding: 28px;
+    margin-top: 8px;
+    animation: slideUp 0.4s ease both;
+}
 
 /* ---- STREAMLIT OVERRIDES ---- */
 h1,h2,h3,h4,h5,h6 { color: #f0f6fc !important; }
@@ -716,69 +766,38 @@ def fetch_sample(cat, fname):
     return None
 
 
-def make_confidence_chart(p_norm, p_anom):
-    """Create a clean horizontal confidence bar chart."""
-    fig = go.Figure()
-
-    # Background track for normal
-    fig.add_trace(go.Bar(
-        x=[100], y=["NORMAL"],
-        orientation='h',
-        marker_color='#1e2d3d',
-        showlegend=False,
-        hoverinfo='skip',
-    ))
-    # Filled bar for normal
-    fig.add_trace(go.Bar(
-        x=[p_norm * 100], y=["NORMAL"],
-        orientation='h',
-        marker_color='#10b981',
-        showlegend=False,
-        text=f"{p_norm*100:.1f}%",
-        textposition='inside',
-        insidetextanchor='middle',
-        textfont=dict(color='white', size=13, family='Space Grotesk'),
-        hovertemplate="Normal: %{x:.1f}%<extra></extra>",
-    ))
-
-    # Background track for anomalous
-    fig.add_trace(go.Bar(
-        x=[100], y=["ANOMALOUS"],
-        orientation='h',
-        marker_color='#1e2d3d',
-        showlegend=False,
-        hoverinfo='skip',
-    ))
-    # Filled bar for anomalous
-    fig.add_trace(go.Bar(
-        x=[p_anom * 100], y=["ANOMALOUS"],
-        orientation='h',
-        marker_color='#ef4444',
-        showlegend=False,
-        text=f"{p_anom*100:.1f}%",
-        textposition='inside',
-        insidetextanchor='middle',
-        textfont=dict(color='white', size=13, family='Space Grotesk'),
-        hovertemplate="Anomalous: %{x:.1f}%<extra></extra>",
-    ))
-
-    fig.update_layout(
-        paper_bgcolor='#0d1117',
-        plot_bgcolor='#0d1117',
-        barmode='overlay',
-        height=160,
-        margin=dict(t=10, b=10, l=20, r=20),
-        xaxis=dict(
-            range=[0, 100],
-            showgrid=False, showticklabels=False, zeroline=False
-        ),
-        yaxis=dict(
-            showgrid=False, zeroline=False,
-            tickfont=dict(color='#8b949e', size=11,
-                         family='JetBrains Mono'),
-        ),
-    )
-    return fig
+def make_confidence_html(p_norm, p_anom):
+    """Create confidence bars using pure HTML - no library needed."""
+    return f"""
+    <div style="padding: 8px 0;">
+        <div style="margin-bottom: 16px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="color:#10b981; font-size:0.85rem; font-weight:600;
+                             font-family:'Space Grotesk',sans-serif;">✅ Normal</span>
+                <span style="color:#f0f6fc; font-size:0.85rem; font-weight:700;
+                             font-family:'Space Grotesk',sans-serif;">{p_norm*100:.1f}%</span>
+            </div>
+            <div style="background:#1e2d3d; border-radius:100px; height:12px; overflow:hidden;">
+                <div style="width:{p_norm*100:.1f}%; background:linear-gradient(90deg,#10b981,#34d399);
+                            height:100%; border-radius:100px; transition:width 0.8s ease;
+                            box-shadow: 0 0 8px rgba(16,185,129,0.4);"></div>
+            </div>
+        </div>
+        <div style="margin-bottom: 8px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="color:#ef4444; font-size:0.85rem; font-weight:600;
+                             font-family:'Space Grotesk',sans-serif;">⚠️ Anomalous</span>
+                <span style="color:#f0f6fc; font-size:0.85rem; font-weight:700;
+                             font-family:'Space Grotesk',sans-serif;">{p_anom*100:.1f}%</span>
+            </div>
+            <div style="background:#1e2d3d; border-radius:100px; height:12px; overflow:hidden;">
+                <div style="width:{p_anom*100:.1f}%; background:linear-gradient(90deg,#ef4444,#f87171);
+                            height:100%; border-radius:100px; transition:width 0.8s ease;
+                            box-shadow: 0 0 8px rgba(239,68,68,0.4);"></div>
+            </div>
+        </div>
+    </div>
+    """
 
 
 def footer():
@@ -815,8 +834,10 @@ if page == "🏠 Live Demo":
     # Hero with typing animation
     st.markdown("""
     <div class="hero">
-        <div class="badge"><span class="dot"></span> LIVE INFERENCE ENGINE ACTIVE</div>
-        <div style="overflow:hidden; display:inline-block;">
+        <div style="display:flex; justify-content:center; margin-bottom:20px;">
+            <div class="badge"><span class="dot"></span> LIVE INFERENCE ENGINE ACTIVE</div>
+        </div>
+        <div style="text-align:center;">
             <div class="typing-title">Detect Defects in Milliseconds</div>
         </div>
         <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:16px;
@@ -849,11 +870,47 @@ if page == "🏠 Live Demo":
         st.error("Model could not be loaded. Please refresh the page.")
         st.stop()
 
+    # ---- How it works steps ----
+    st.markdown("""
+    <div style="display:flex; gap:12px; margin-bottom:28px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:180px; background:#0d1117; border:1px solid #1e2d3d;
+                    border-radius:12px; padding:16px; display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:28px;height:28px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);
+                        border-radius:50%;display:flex;align-items:center;justify-content:center;
+                        font-size:0.8rem;font-weight:700;color:#3b82f6;flex-shrink:0;">1</div>
+            <div>
+                <div style="color:#f0f6fc;font-size:0.85rem;font-weight:600;">Upload or Select</div>
+                <div style="color:#6e7681;font-size:0.76rem;margin-top:2px;">Upload your image or pick a sample below</div>
+            </div>
+        </div>
+        <div style="flex:1; min-width:180px; background:#0d1117; border:1px solid #1e2d3d;
+                    border-radius:12px; padding:16px; display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:28px;height:28px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);
+                        border-radius:50%;display:flex;align-items:center;justify-content:center;
+                        font-size:0.8rem;font-weight:700;color:#3b82f6;flex-shrink:0;">2</div>
+            <div>
+                <div style="color:#f0f6fc;font-size:0.85rem;font-weight:600;">Click Analyze</div>
+                <div style="color:#6e7681;font-size:0.76rem;margin-top:2px;">AI processes the image in milliseconds</div>
+            </div>
+        </div>
+        <div style="flex:1; min-width:180px; background:#0d1117; border:1px solid #1e2d3d;
+                    border-radius:12px; padding:16px; display:flex; gap:12px; align-items:flex-start;">
+            <div style="width:28px;height:28px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);
+                        border-radius:50%;display:flex;align-items:center;justify-content:center;
+                        font-size:0.8rem;font-weight:700;color:#3b82f6;flex-shrink:0;">3</div>
+            <div>
+                <div style="color:#f0f6fc;font-size:0.85rem;font-weight:600;">View Results</div>
+                <div style="color:#6e7681;font-size:0.76rem;margin-top:2px;">See prediction, confidence, and Grad-CAM</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     # ---- Upload + Preview ----
     up_col, prev_col = st.columns([1,1], gap="large")
 
     with up_col:
-        st.markdown("<div class='clabel'>UPLOAD YOUR OWN IMAGE</div>", unsafe_allow_html=True)
+        st.markdown("<div class='clabel'>STEP 1 — UPLOAD YOUR IMAGE</div>", unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
             "Drop image here",
             type=["jpg","jpeg","png","bmp"],
@@ -1001,8 +1058,7 @@ if page == "🏠 Live Demo":
 
         with r2:
             st.markdown("<div class='clabel'>CONFIDENCE SCORES</div>", unsafe_allow_html=True)
-            st.plotly_chart(make_confidence_chart(p_norm, p_anom),
-                            use_container_width=True, config={'displayModeBar': False})
+            st.markdown(make_confidence_html(p_norm, p_anom), unsafe_allow_html=True)
 
             dominant_color = "#10b981" if pred == 0 else "#ef4444"
             dominant_label = "NORMAL" if pred == 0 else "ANOMALOUS"
@@ -1067,6 +1123,8 @@ if page == "🏠 Live Demo":
         with comp_col2:
             st.image(overlay_np, use_column_width=True, caption="Full Grad-CAM Overlay")
 
+    # Footer always shows at bottom
+    st.markdown("<br>", unsafe_allow_html=True)
     footer()
 
 
@@ -1077,7 +1135,7 @@ elif page == "📋 Project Info":
 
     st.markdown("""
     <div class="hero">
-        <div class="badge"><span class="dot"></span> RESEARCH PROJECT · SS26</div>
+        <div style="display:flex;justify-content:center;margin-bottom:20px;"><div class="badge"><span class="dot"></span> RESEARCH PROJECT · SS26</div></div>
         <div class="typing-title">Project Overview</div>
         <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:14px;
                   max-width:600px; margin-left:auto; margin-right:auto;">
@@ -1243,7 +1301,7 @@ elif page == "📊 Results":
 
     st.markdown("""
     <div class="hero">
-        <div class="badge"><span class="dot"></span> EXPERIMENTAL RESULTS</div>
+        <div style="display:flex;justify-content:center;margin-bottom:20px;"><div class="badge"><span class="dot"></span> EXPERIMENTAL RESULTS</div></div>
         <div class="typing-title">Model Performance</div>
         <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:14px;
                   max-width:560px; margin-left:auto; margin-right:auto;">
@@ -1470,7 +1528,7 @@ elif page == "🔬 Explainability":
 
     st.markdown("""
     <div class="hero">
-        <div class="badge"><span class="dot"></span> EXPLAINABLE AI · XAI</div>
+        <div style="display:flex;justify-content:center;margin-bottom:20px;"><div class="badge"><span class="dot"></span> EXPLAINABLE AI · XAI</div></div>
         <div class="typing-title">Why Trust the Model?</div>
         <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:14px;
                   max-width:560px; margin-left:auto; margin-right:auto;">
@@ -1592,7 +1650,7 @@ elif page == "👤 About":
 
     st.markdown("""
     <div class="hero">
-        <div class="badge"><span class="dot"></span> ABOUT</div>
+        <div style="display:flex;justify-content:center;margin-bottom:20px;"><div class="badge"><span class="dot"></span> ABOUT</div></div>
         <div class="typing-title">Abdullah Rashid</div>
         <p style="font-size:1.05rem; color:#8b949e; line-height:1.7; margin-top:14px;">
             3rd Semester · Bachelor of Software Engineering<br>
