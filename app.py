@@ -449,25 +449,30 @@ if page == "🏠 Live Demo":
     with col1:
         st.markdown("<div class='card-title'>UPLOAD YOUR OWN IMAGE</div>", unsafe_allow_html=True)
 
-        category = st.selectbox(
-            "Select Product Category",
-            [c.replace('_', ' ').title() for c in CATEGORIES],
-            help="Select the type of industrial product in your image"
-        )
-
         uploaded_file = st.file_uploader(
             "Drop your image here",
             type=["jpg", "jpeg", "png", "bmp"],
-            help="Supported formats: JPG, JPEG, PNG, BMP"
+            help="Upload any industrial product image. Supported formats: JPG, JPEG, PNG, BMP"
         )
 
         st.markdown("""
         <div class='info-box' style='margin-top: 16px;'>
             <strong style='color: #3b82f6;'>How it works:</strong><br>
-            1. Select the product category<br>
-            2. Upload your own image OR use a sample below<br>
-            3. Click Analyze to get the AI prediction<br>
+            1. Upload your own image OR use a sample below<br>
+            2. Click Analyze to get the AI prediction<br>
+            3. View the confidence scores<br>
             4. View Grad-CAM heatmap showing model focus areas
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style='background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2);
+                    border-radius: 10px; padding: 12px 16px; margin-top: 12px;
+                    font-size: 0.82rem; color: #94a3b8;'>
+            💡 <strong style='color: #10b981;'>Tip:</strong>
+            The model works on all 15 MVTec AD product categories including
+            bottles, cables, capsules, carpet, leather, screws, and more.
+            You can upload any industrial product image!
         </div>
         """, unsafe_allow_html=True)
 
@@ -547,6 +552,7 @@ if page == "🏠 Live Demo":
     elif uploaded_file is not None:
         analyze_image = Image.open(uploaded_file).convert("RGB")
         analyze_label = uploaded_file.name
+        selected_sample_cat = "Uploaded Image"
 
     # ---- Analyze Button ----
     st.markdown("<br>", unsafe_allow_html=True)
