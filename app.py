@@ -11,8 +11,6 @@ import io
 import requests
 from pathlib import Path
 import pandas as pd
-import plotly.graph_objects as go
-import plotly.express as px
 
 # ============================================================
 # PAGE CONFIG
@@ -391,33 +389,48 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 .sample-card:hover .sample-overlay { transform: translateY(0); }
 
-/* ---- ALL BUTTONS BASE ---- */
-div[data-testid="stButton"] button {
-    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
-    color: #ffffff !important;
+/* ---- BUTTONS ---- */
+.stButton > button,
+.stButton > button:focus,
+div[data-testid="stButton"] > button {
+    background-color: #2563eb !important;
+    background-image: linear-gradient(135deg, #2563eb, #7c3aed) !important;
+    color: white !important;
     border: none !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-size: 0.9rem !important;
-    padding: 10px 20px !important;
-    transition: all 0.2s ease !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    padding: 10px 18px !important;
     width: 100% !important;
-    letter-spacing: 0.02em !important;
-    box-shadow: 0 0 0 1px rgba(99,102,241,0.4), 0 4px 16px rgba(37,99,235,0.35) !important;
+    cursor: pointer !important;
+    transition: filter 0.15s ease, transform 0.15s ease !important;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.4) !important;
+    letter-spacing: 0.01em !important;
+    font-family: 'Space Grotesk', sans-serif !important;
 }
 
-div[data-testid="stButton"] button:hover {
-    background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%) !important;
+.stButton > button:hover,
+div[data-testid="stButton"] > button:hover {
+    filter: brightness(1.15) !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 0 0 1px rgba(99,102,241,0.6), 0 8px 24px rgba(37,99,235,0.45) !important;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.5) !important;
 }
 
-div[data-testid="stButton"] button:disabled {
-    background: #161b22 !important;
+.stButton > button:active,
+div[data-testid="stButton"] > button:active {
+    transform: translateY(0) !important;
+    filter: brightness(0.95) !important;
+}
+
+.stButton > button:disabled,
+div[data-testid="stButton"] > button:disabled {
+    background-color: #1e2d3d !important;
+    background-image: none !important;
     color: #484f58 !important;
-    box-shadow: 0 0 0 1px #1e2d3d !important;
+    box-shadow: none !important;
     transform: none !important;
+    filter: none !important;
+    cursor: not-allowed !important;
 }
 
 /* ---- INFO BOX ---- */
@@ -1339,7 +1352,7 @@ elif page == "📊 Results":
     })
     st.dataframe(df, use_container_width=True, hide_index=True)
 
-    # Interactive Plotly bar chart
+    # ---- Metric selector bar chart (matplotlib) ----
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">INTERACTIVE CHART</div>
@@ -1352,137 +1365,117 @@ elif page == "📊 Results":
         label_visibility="collapsed"
     )
 
-    bar_colors_map = {
-        "Custom CNN":       "#6e7681",
-        "EfficientNetV2S":  "#3b82f6",
-        "ConvNeXtTiny ⭐": "#10b981"
+    models_list   = ["Custom CNN", "EfficientNetV2S", "ConvNeXtTiny"]
+    metric_values = {
+        "Accuracy":        [0.6377, 0.8693, 0.9066],
+        "Macro F1":        [0.5499, 0.8142, 0.8706],
+        "ROC-AUC":         [0.5775, 0.9025, 0.9544],
+        "PR-AUC":          [0.2821, 0.8159, 0.8916],
+        "Inference (ms)":  [0.790,  3.154,  4.401],
+        "Params (M)":      [0.42,   15.22,  15.67],
+        "Size (MB)":       [1.63,   79.10,  106.95],
     }
+    bar_model_colors = ["#6e7681", "#3b82f6", "#10b981"]
+    vals = metric_values[metric]
 
-    fig = go.Figure()
-    for _, row in df.iterrows():
-        fig.add_trace(go.Bar(
-            x=[row["Model"]],
-            y=[row[metric]],
-            name=row["Model"],
-            marker_color=bar_colors_map[row["Model"]],
-            text=[f"{row[metric]:.4f}"],
-            textposition='outside',
-            textfont=dict(color='#8b949e', size=11)
-        ))
+    fig_bar, ax_bar = plt.subplots(figsize=(8, 3.5))
+    fig_bar.patch.set_facecolor('#0d1117')
+    ax_bar.set_facecolor('#0d1117')
+    bars = ax_bar.bar(models_list, vals, color=bar_model_colors,
+                      edgecolor='none', width=0.5)
+    ax_bar.tick_params(colors='#8b949e', labelsize=10)
+    for sp in ax_bar.spines.values(): sp.set_color('#1e2d3d')
+    ax_bar.set_ylabel(metric, color='#8b949e', fontsize=9)
+    ax_bar.yaxis.set_tick_params(labelcolor='#8b949e')
+    for bar, val in zip(bars, vals):
+        ax_bar.text(bar.get_x()+bar.get_width()/2, bar.get_height()+max(vals)*0.01,
+                    f'{val:.4f}', ha='center', fontsize=9, color='#8b949e')
+    plt.tight_layout()
+    st.pyplot(fig_bar)
+    plt.close()
 
-    fig.update_layout(
-        paper_bgcolor='#0d1117',
-        plot_bgcolor='#0d1117',
-        font=dict(color='#8b949e', family='Inter'),
-        showlegend=False,
-        height=350,
-        margin=dict(t=20, b=20, l=20, r=20),
-        xaxis=dict(gridcolor='#1e2d3d', tickfont=dict(color='#8b949e')),
-        yaxis=dict(gridcolor='#1e2d3d', tickfont=dict(color='#8b949e')),
-        bargap=0.4,
-    )
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
-    # Radar chart
+    # ---- Radar chart (matplotlib) ----
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">RADAR CHART</div>
     <div class="sec-title">Multi-Metric Comparison</div>
     <div class="sec-body" style="margin-bottom:16px;">
-        A spider chart comparing all models across key performance dimensions.
+        A spider chart comparing all 3 models across key performance dimensions.
     </div>
     """, unsafe_allow_html=True)
 
-    categories_radar = ['Accuracy','Macro F1','ROC-AUC','PR-AUC','Speed (inv)']
-    # Speed: invert inference time (lower = better), normalize to 0-1
-    speed_scores = [1.0, 0.25, 0.18]  # Custom CNN fastest
-
-    model_scores = {
-        'Custom CNN':       [0.6377, 0.5499, 0.5775, 0.2821, 1.0],
-        'EfficientNetV2S':  [0.8693, 0.8142, 0.9025, 0.8159, 0.25],
-        'ConvNeXtTiny':     [0.9066, 0.8706, 0.9544, 0.8916, 0.18],
+    radar_labels  = ['Accuracy', 'Macro F1', 'ROC-AUC', 'PR-AUC', 'Speed']
+    radar_data    = {
+        'Custom CNN':      [0.6377, 0.5499, 0.5775, 0.2821, 1.00],
+        'EfficientNetV2S': [0.8693, 0.8142, 0.9025, 0.8159, 0.25],
+        'ConvNeXtTiny':    [0.9066, 0.8706, 0.9544, 0.8916, 0.18],
     }
-    radar_colors = ['#6e7681','#3b82f6','#10b981']
+    radar_colors_list = ['#6e7681', '#3b82f6', '#10b981']
+    N = len(radar_labels)
+    angles = [n/float(N)*2*np.pi for n in range(N)]
+    angles += angles[:1]
 
-    fig_r = go.Figure()
-    for (model_name, scores), color in zip(model_scores.items(), radar_colors):
-        fig_r.add_trace(go.Scatterpolar(
-            r=scores + [scores[0]],
-            theta=categories_radar + [categories_radar[0]],
-            fill='toself',
-            fillcolor=color.replace('#','rgba(') + ',0.1)',
-            line=dict(color=color, width=2),
-            name=model_name,
-        ))
+    fig_r, ax_r = plt.subplots(figsize=(6, 5), subplot_kw=dict(polar=True))
+    fig_r.patch.set_facecolor('#0d1117')
+    ax_r.set_facecolor('#0d1117')
+    ax_r.spines['polar'].set_color('#1e2d3d')
+    ax_r.grid(color='#1e2d3d', linewidth=0.8)
 
-    fig_r.update_layout(
-        polar=dict(
-            bgcolor='#0d1117',
-            radialaxis=dict(
-                visible=True, range=[0, 1],
-                gridcolor='#1e2d3d', tickfont=dict(color='#6e7681', size=9),
-                linecolor='#1e2d3d'
-            ),
-            angularaxis=dict(
-                gridcolor='#1e2d3d',
-                tickfont=dict(color='#8b949e', size=10),
-                linecolor='#1e2d3d'
-            )
-        ),
-        paper_bgcolor='#0d1117',
-        font=dict(color='#8b949e'),
-        legend=dict(
-            bgcolor='#0d1117', bordercolor='#1e2d3d', borderwidth=1,
-            font=dict(color='#8b949e')
-        ),
-        height=400,
-        margin=dict(t=20, b=20, l=60, r=60),
-    )
-    st.plotly_chart(fig_r, use_container_width=True, config={'displayModeBar': False})
+    for (model_n, scores), clr in zip(radar_data.items(), radar_colors_list):
+        vals_r = scores + scores[:1]
+        ax_r.plot(angles, vals_r, color=clr, linewidth=2, label=model_n)
+        ax_r.fill(angles, vals_r, color=clr, alpha=0.08)
 
-    # Per-category
+    ax_r.set_xticks(angles[:-1])
+    ax_r.set_xticklabels(radar_labels, color='#8b949e', fontsize=9)
+    ax_r.set_ylim(0, 1)
+    ax_r.set_yticks([0.25, 0.5, 0.75, 1.0])
+    ax_r.set_yticklabels(['0.25','0.5','0.75','1.0'], color='#6e7681', fontsize=7)
+    ax_r.tick_params(colors='#8b949e')
+    legend = ax_r.legend(loc='upper right', bbox_to_anchor=(1.35, 1.1),
+                         facecolor='#0d1117', edgecolor='#1e2d3d',
+                         labelcolor='#8b949e', fontsize=9)
+    plt.tight_layout()
+    st.pyplot(fig_r)
+    plt.close()
+
+    # ---- Per-category bar chart (matplotlib) ----
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
     <div class="eyebrow">CATEGORY ANALYSIS</div>
-    <div class="sec-title">Per-Category Accuracy</div>
+    <div class="sec-title">Per-Category Accuracy — ConvNeXtTiny</div>
     <div class="sec-body" style="margin-bottom:16px;">
         🟢 above 90% &nbsp;·&nbsp; 🔵 80–90% &nbsp;·&nbsp; 🔴 below 80%
     </div>
     """, unsafe_allow_html=True)
 
-    cat_data = pd.DataFrame({
-        "Category": ["Carpet","Leather","Bottle","Hazelnut","Tile","Zipper",
-                     "Grid","Wood","Pill","Capsule","Metal Nut","Cable",
-                     "Transistor","Screw","Toothbrush"],
-        "Accuracy": [1.00,0.98,0.95,0.96,0.94,0.95,
-                     0.93,0.92,0.90,0.91,0.89,0.88,
-                     0.87,0.82,0.70],
-    })
+    cat_names = ["Carpet","Leather","Bottle","Hazelnut","Tile","Zipper",
+                 "Grid","Wood","Pill","Capsule","Metal Nut","Cable",
+                 "Transistor","Screw","Toothbrush"]
+    cat_accs  = [1.00,0.98,0.95,0.96,0.94,0.95,
+                 0.93,0.92,0.90,0.91,0.89,0.88,
+                 0.87,0.82,0.70]
+    cat_colors = ['#10b981' if v>=0.90 else '#3b82f6' if v>=0.80 else '#ef4444'
+                  for v in cat_accs]
 
-    bar_clrs = ['#10b981' if v >= 0.90 else '#3b82f6' if v >= 0.80 else '#ef4444'
-                for v in cat_data["Accuracy"]]
-
-    fig_c = go.Figure(go.Bar(
-        x=cat_data["Category"],
-        y=cat_data["Accuracy"],
-        marker_color=bar_clrs,
-        text=[f'{v:.0%}' for v in cat_data["Accuracy"]],
-        textposition='outside',
-        textfont=dict(color='#8b949e', size=10),
-    ))
-    fig_c.add_hline(y=cat_data["Accuracy"].mean(), line_dash="dash",
-                    line_color="#f59e0b", annotation_text=f"Mean: {cat_data['Accuracy'].mean():.2f}",
-                    annotation_font_color="#f59e0b")
-    fig_c.update_layout(
-        paper_bgcolor='#0d1117', plot_bgcolor='#0d1117',
-        font=dict(color='#8b949e', family='Inter'),
-        height=380, showlegend=False,
-        margin=dict(t=30, b=60, l=20, r=20),
-        xaxis=dict(tickangle=-30, tickfont=dict(color='#8b949e', size=10), gridcolor='#1e2d3d'),
-        yaxis=dict(range=[0, 1.12], gridcolor='#1e2d3d', tickfont=dict(color='#8b949e')),
-        bargap=0.3,
-    )
-    st.plotly_chart(fig_c, use_container_width=True, config={'displayModeBar': False})
+    fig_c, ax_c = plt.subplots(figsize=(13, 4))
+    fig_c.patch.set_facecolor('#0d1117')
+    ax_c.set_facecolor('#0d1117')
+    bars_c = ax_c.bar(cat_names, cat_accs, color=cat_colors, edgecolor='none', width=0.6)
+    ax_c.axhline(y=np.mean(cat_accs), color='#f59e0b', linestyle='--', linewidth=1.5,
+                 label=f'Mean: {np.mean(cat_accs):.2f}')
+    ax_c.set_ylim(0, 1.13)
+    ax_c.tick_params(axis='x', rotation=30, labelsize=9, colors='#8b949e')
+    ax_c.tick_params(axis='y', labelsize=9, colors='#8b949e')
+    for sp in ax_c.spines.values(): sp.set_color('#1e2d3d')
+    ax_c.set_ylabel('Accuracy', color='#8b949e', fontsize=9)
+    for bar, val in zip(bars_c, cat_accs):
+        ax_c.text(bar.get_x()+bar.get_width()/2, val+0.012,
+                  f'{val:.0%}', ha='center', fontsize=8, color='#8b949e')
+    ax_c.legend(facecolor='#0d1117', edgecolor='#1e2d3d', labelcolor='#f59e0b', fontsize=9)
+    plt.tight_layout()
+    st.pyplot(fig_c)
+    plt.close()
 
     # RQs
     st.markdown("<br>", unsafe_allow_html=True)
