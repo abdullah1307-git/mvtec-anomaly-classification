@@ -150,7 +150,6 @@ Transfer learning models use a two-stage training strategy:
 
 | Resource | Link |
 |---|---|
-| Kaggle Notebook | To be added after commit finishes |
+| Kaggle Notebook | https://www.kaggle.com/code/abdullah130704/notebook8b312b2661 |
 | Dataset | https://www.kaggle.com/datasets/ipythonx/mvtec-ad |
-| Live Demo | To be added after frontend is deployed |
-| Project Report | To be added after Overleaf report is complete |
+| Live Demo | https://mvtec-anomaly-classification.streamlit.app/ |
